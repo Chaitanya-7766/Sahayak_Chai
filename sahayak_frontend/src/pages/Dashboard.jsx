@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { 
+import {
   User, MapPin, Briefcase, GraduationCap,
-  Search, Volume2, VolumeX, Eye, ClipboardCheck, ArrowRight, HelpCircle
+  Search, Volume2, VolumeX, Eye, ClipboardCheck, ArrowRight, HelpCircle,
+  LayoutDashboard, Compass, Settings, Bell, ChevronLeft, ChevronRight,
+  Bookmark, CheckCircle
 } from 'lucide-react';
 import { useAuth, API_BASE_URL } from '../contexts/AuthContext';
 import LanguageSwitcher from '../components/LanguageSwitcher';
@@ -14,7 +16,7 @@ import ProfileMenu from '../components/ProfileMenu';
 export default function Dashboard() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const { currentUser, signOut } = useAuth();
+  const { currentUser } = useAuth();
 
   // State variables
   const [recommendations, setRecommendations] = useState([]);
@@ -74,7 +76,7 @@ export default function Dashboard() {
     if (searchQuery.trim()) {
       handleSearch(searchQuery);
     }
-    
+
     // Load recently viewed from localStorage
     const saved = localStorage.getItem(`recently_viewed_${currentUser.id}`);
     if (saved) {
@@ -88,29 +90,11 @@ export default function Dashboard() {
     handleSearch(text);
   };
 
-  // Profile completion calculation
-  const getProfileCompletion = () => {
-    if (!currentUser) return 0;
-    const fields = [
-      currentUser.age,
-      currentUser.gender,
-      currentUser.state,
-      currentUser.district,
-      currentUser.occupation,
-      currentUser.annual_income,
-      currentUser.category,
-      currentUser.education_level,
-      currentUser.marital_status
-    ];
-    const filled = fields.filter(val => val !== null && val !== undefined && val !== '').length;
-    return Math.round((filled / fields.length) * 100);
-  };
-
   // Track clicked schemes
   const handleSchemeClick = async (scheme) => {
     const isExpanding = expandedSchemeId !== scheme.scheme_id;
     setExpandedSchemeId(isExpanding ? scheme.scheme_id : null);
-    
+
     const updated = [scheme, ...recentlyViewed.filter(s => s.scheme_id !== scheme.scheme_id)].slice(0, 5);
     setRecentlyViewed(updated);
     localStorage.setItem(`recently_viewed_${currentUser?.id}`, JSON.stringify(updated));
@@ -135,8 +119,7 @@ export default function Dashboard() {
       setSpeakingSchemeId(null);
     } else {
       const details = schemeDetails[scheme.scheme_id] || scheme;
-      
-      // Localized speech labels
+
       const getSpeakLabels = (lang) => {
         switch (lang?.split('-')[0]) {
           case 'hi':
@@ -149,10 +132,10 @@ export default function Dashboard() {
             return { benefits: 'Benefits', eligibility: 'Eligibility' };
         }
       };
-      
+
       const labels = getSpeakLabels(i18n.language);
       const isExpanded = expandedSchemeId === scheme.scheme_id;
-      
+
       let textParts = [];
       if (details.schemeCategory) {
         textParts.push(details.schemeCategory);
@@ -164,323 +147,352 @@ export default function Dashboard() {
       if (isExpanded && details.eligibility) {
         textParts.push(`${labels.eligibility}: ${details.eligibility}`);
       }
-      
+
       const textToRead = textParts.join('. ');
-      
+
       speakText(textToRead, i18n.language, () => setSpeakingSchemeId(null));
       setSpeakingSchemeId(scheme.scheme_id);
     }
   };
 
+  // Helper parser for benefit numerical value to sum them up
+  const parseBenefitAmount = (benefitStr) => {
+    if (!benefitStr) return 0;
+    // Look for numbers in the benefit string
+    const match = benefitStr.replace(/,/g, '').match(/\d+/);
+    return match ? parseInt(match[0], 10) : 0;
+  };
+
+  // Greeting helper based on local time
+  const getGreeting = () => {
+    const hr = new Date().getHours();
+    if (hr < 12) return 'Good morning';
+    if (hr < 17) return 'Good afternoon';
+    return 'Good evening';
+  };
+
+  // Card theme configurations
+  const getSchemeColors = (index) => {
+    const colors = [
+      { text: '#E98A15', iconBg: 'bg-amber-500/10' },
+      { text: '#25D366', iconBg: 'bg-emerald-500/10' },
+      { text: '#A855F7', iconBg: 'bg-purple-500/10' },
+    ];
+    return colors[index % colors.length];
+  };
+
+  const totalBenefits = recommendations.reduce((sum, s) => sum + parseBenefitAmount(s.benefits), 0) || 45000;
+
   return (
     <div
-      className="min-h-screen flex flex-col relative overflow-x-hidden text-white"
+      className="min-h-screen flex text-white overflow-hidden bg-[#060E1C]"
       style={{
         background: 'linear-gradient(145deg, #060E1C 0%, #0F1B30 30%, #1A2C50 65%, #243965 100%)',
       }}
     >
-      {/* ── Background Elements ── */}
-      <div className="absolute inset-0 dot-pattern pointer-events-none" />
-      <div className="orb animate-float" style={{ width: '500px', height: '500px', background: 'radial-gradient(circle, rgba(233,138,21,0.12) 0%, transparent 70%)', top: '-100px', right: '-100px' }} />
-      <div className="orb animate-float2" style={{ width: '400px', height: '400px', background: 'radial-gradient(circle, rgba(62,92,138,0.15) 0%, transparent 70%)', bottom: '-50px', left: '-50px' }} />
-
-      {/* ── Navigation Header ── */}
-      <header className="relative z-50 flex items-center justify-between px-6 py-5 sm:px-10 lg:px-16 border-b border-white/5 bg-white/[0.02] backdrop-blur-md">
-        <Link to="/" className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg, #E98A15, #F0A23E)' }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-              <path d="M12 2L2 7l10 5 10-5-10-5z" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="rgba(255,255,255,0.2)" />
-              <path d="M2 17l10 5 10-5M2 12l10 5 10-5" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </div>
-          <span className="font-display text-lg font-bold tracking-tight">Sahayak AI</span>
-        </Link>
-
-        <div className="flex items-center gap-4">
-          <Link to="/documents" className="text-xs font-semibold text-indigo-200 hover:text-white px-3 py-2 rounded-lg hover:bg-white/5 transition-all flex items-center gap-1.5">
-            <ClipboardCheck className="w-4 h-4 text-amber-500" />
-            {t('dashboard.uploadDocuments')}
+      {/* ── Left Sidebar Navigation ── */}
+      <aside className="w-64 bg-[#070F1E] border-r border-white/5 flex flex-col justify-between p-6 h-screen sticky top-0 flex-shrink-0 z-40">
+        <div className="space-y-8">
+          {/* Logo */}
+          <Link to="/" className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #E98A15, #F0A23E)' }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path d="M12 2L2 7l10 5 10-5-10-5z" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="rgba(255,255,255,0.2)" />
+                <path d="M2 17l10 5 10-5M2 12l10 5 10-5" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
+            <span className="font-display text-lg font-bold tracking-tight text-white">Sahayak</span>
           </Link>
-          <LanguageSwitcher />
-          <ProfileMenu />
+
+          {/* Navigation Links */}
+          <nav className="flex flex-col gap-1.5">
+            {[
+              { label: 'Dashboard', icon: LayoutDashboard, path: '/' },
+              { label: 'My Schemes', icon: ClipboardCheck, path: '/documents' },
+              { label: 'Explore', icon: Compass, path: '#explore' },
+              { label: 'Profile', icon: User, path: '/profile' },
+              { label: 'Settings', icon: Settings, path: '/profile' },
+              { label: 'Help', icon: HelpCircle, path: '/help' }
+            ].map((item) => {
+              const isActive = (item.label === 'Dashboard' && activeTab === 'eligible') ||
+                (item.label === 'Explore' && activeTab === 'search');
+              return (
+                <button
+                  key={item.label}
+                  onClick={() => {
+                    if (item.path.startsWith('/')) {
+                      navigate(item.path);
+                    } else if (item.path === '#explore') {
+                      setActiveTab('search');
+                    } else {
+                      setActiveTab('eligible');
+                    }
+                  }}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${isActive
+                      ? 'text-black'
+                      : 'text-indigo-300/60 hover:text-white hover:bg-white/[0.03]'
+                    }`}
+                  style={isActive ? { background: 'linear-gradient(135deg, #E98A15, #F0A23E)' } : {}}
+                >
+                  <item.icon className="w-5 h-5" />
+                  {item.label}
+                </button>
+              );
+            })}
+          </nav>
         </div>
-      </header>
+
+        {/* Voice Assistant integrated in Sidebar */}
+        <div className="pt-4 border-t border-white/5 w-full flex flex-col items-center text-center space-y-2.5">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-amber-500">Voice Assistant</span>
+          <VoiceAssistant
+            activeLanguage={i18n.language}
+            onCommand={handleVoiceCommand}
+          />
+          <span className="text-[9px] text-indigo-300/40">Speak "Farmer", "Student", etc.</span>
+        </div>
+      </aside>
 
       {/* ── Dashboard Grid ── */}
-      <main className="relative z-0 flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        {/* Left/Middle Column (Main Dashboard Content) */}
-        <div className="lg:col-span-2 space-y-6">
-          
-          {/* Welcome Card */}
-          <div className="glass rounded-3xl p-6 relative overflow-hidden border border-white/10">
-            <div className="space-y-3 animate-fade-up">
-              <div className="flex items-center gap-2 text-xs font-bold text-amber-400 uppercase tracking-widest">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
-                {t('dashboard.portalActive')}
-              </div>
-              <h1 className="text-2xl font-bold font-display">{t('dashboard.welcome')}, {currentUser?.full_name}</h1>
-              <p className="text-indigo-200/60 text-xs leading-relaxed max-w-md">
-                {t('dashboard.summaryText')}{' '}
-                <strong className="text-white">
-                  {currentUser?.district ? `(${currentUser.district}, ${currentUser.state})` : ''}
-                </strong>
-              </p>
-              
-              {/* Profile Chip Summary */}
-              <div className="flex flex-wrap gap-2 pt-2 text-xs">
-                <span className="bg-white/5 px-2.5 py-1 rounded-full border border-white/5 flex items-center gap-1.5">
-                  <User className="w-3 h-3 text-indigo-400" /> 
-                  {currentUser?.age} {t('common.years', 'Yrs')} · {t(`onboarding.options.gender.${currentUser?.gender?.toLowerCase()}`, currentUser?.gender)}
-                </span>
-                <span className="bg-white/5 px-2.5 py-1 rounded-full border border-white/5 flex items-center gap-1.5">
-                  <MapPin className="w-3 h-3 text-indigo-400" /> {currentUser?.state}
-                </span>
-                <span className="bg-white/5 px-2.5 py-1 rounded-full border border-white/5 flex items-center gap-1.5">
-                  <Briefcase className="w-3 h-3 text-indigo-400" /> {t(`onboarding.options.occupation.${currentUser?.occupation?.toLowerCase()}`, currentUser?.occupation)}
-                </span>
-                <span className="bg-white/5 px-2.5 py-1 rounded-full border border-white/5 flex items-center gap-1.5">
-                  <GraduationCap className="w-3 h-3 text-indigo-400" /> 
-                  {t(`onboarding.options.education.${currentUser?.education_level === '10th' ? 'below10' : currentUser?.education_level === 'Intermediate' ? 'intermediate' : currentUser?.education_level === 'UG' ? 'ug' : currentUser?.education_level === 'PG' ? 'pg' : currentUser?.education_level === 'PhD' ? 'phd' : 'any'}`, currentUser?.education_level)}
-                </span>
-              </div>
+      <main className="relative z-10 flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+        {/* ── Header ── */}
+        <header className="sticky top-0 z-30 flex items-center justify-between px-8 py-5 border-b border-white/5 bg-[#060E1C]/85 backdrop-blur-md">
+          {/* Search bar */}
+          <div className="relative w-80">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => {
+                setActiveTab('search');
+                handleSearch(e.target.value);
+              }}
+              placeholder="Search schemes, benefits, or keywords..."
+              className="w-full bg-[#111A2E]/60 border border-white/10 rounded-xl py-2 pl-10 pr-4 text-sm outline-none transition-all focus:border-amber-500 focus:bg-white/[0.03] text-white"
+            />
+            <Search className="w-4 h-4 text-indigo-300/40 absolute left-3.5 top-3" />
+          </div>
+
+          {/* Action icons & Profile */}
+          <div className="flex items-center gap-6">
+            <LanguageSwitcher />
+            <button className="relative p-1.5 text-indigo-300/60 hover:text-white transition-colors">
+              <Bell className="w-5 h-5" />
+              <span className="absolute top-1 right-1 w-2 h-2 bg-rose-500 rounded-full" />
+            </button>
+            <div className="relative">
+              <ProfileMenu />
+            </div>
+          </div>
+        </header>
+
+        {/* ── Main Dashboard Body ── */}
+        <main className="flex-1 max-w-5xl w-full mx-auto px-8 py-8 space-y-8">
+
+          {/* Greeting Title */}
+          <div className="space-y-1">
+            <h1 className="text-3xl font-bold font-display tracking-tight text-white">
+              {getGreeting()}, {currentUser?.full_name} 👋
+            </h1>
+            <p className="text-sm text-indigo-300/60">
+              You're eligible for {recommendations.length} new schemes
+            </p>
+          </div>
+
+          {/* Statistics Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Eligible Schemes Card */}
+            <div className="rounded-2xl p-6 flex flex-col justify-between h-32 transition-all hover:scale-[1.02]"
+              style={{ background: 'linear-gradient(135deg, #231B0D 0%, #151008 100%)', border: '1.5px solid rgba(233,138,21,0.2)' }}>
+              <span className="text-3xl font-extrabold text-amber-500">{recommendations.length}</span>
+              <span className="text-sm font-semibold text-amber-500/80">Eligible Schemes</span>
+            </div>
+
+            {/* Applied Card */}
+            <div className="rounded-2xl p-6 flex flex-col justify-between h-32 transition-all hover:scale-[1.02]"
+              style={{ background: 'linear-gradient(135deg, #0D2319 0%, #08150F 100%)', border: '1.5px solid rgba(37,211,102,0.2)' }}>
+              <span className="text-3xl font-extrabold text-emerald-500">3</span>
+              <span className="text-sm font-semibold text-emerald-500/80">Applied</span>
+            </div>
+
+            {/* Total Benefits Card */}
+            <div className="rounded-2xl p-6 flex flex-col justify-between h-32 transition-all hover:scale-[1.02]"
+              style={{ background: 'linear-gradient(135deg, #1C0D23 0%, #110815 100%)', border: '1.5px solid rgba(168,85,247,0.2)' }}>
+              <span className="text-3xl font-extrabold text-purple-400">₹{totalBenefits.toLocaleString('en-IN')}</span>
+              <span className="text-sm font-semibold text-purple-400/80">Total Benefits</span>
             </div>
           </div>
 
-          {/* ── Switch Tabs (Eligible vs Live Search) ── */}
-          <div className="flex border-b border-white/5 gap-6">
-            <button
-              onClick={() => setActiveTab('eligible')}
-              className={`pb-3 text-sm font-bold tracking-wide transition-all border-b-2 ${
-                activeTab === 'eligible' 
-                  ? 'text-amber-400 border-amber-400' 
-                  : 'text-indigo-300/50 border-transparent hover:text-indigo-200'
-              }`}
-            >
-              {t('dashboard.tabs.eligible')} ({recommendations.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('search')}
-              className={`pb-3 text-sm font-bold tracking-wide transition-all border-b-2 ${
-                activeTab === 'search' 
-                  ? 'text-amber-400 border-amber-400' 
-                  : 'text-indigo-300/50 border-transparent hover:text-indigo-200'
-              }`}
-            >
-              {t('dashboard.tabs.search')}
-            </button>
-          </div>
-
-          {/* ── Search Input (Only shown in Search Tab or as quick access) ── */}
-          {activeTab === 'search' && (
-            <div className="relative w-full animate-slide-up">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => handleSearch(e.target.value)}
-                placeholder={t('dashboard.searchPlaceholder')}
-                className="w-full bg-white/[0.03] border-2 border-white/10 rounded-2xl py-3.5 pl-11 pr-4 text-sm outline-none transition-all duration-200 focus:border-amber-500 focus:bg-white/[0.05] text-white"
-              />
-              <Search className="w-5 h-5 text-indigo-400/50 absolute left-4 top-3.5" />
-            </div>
-          )}
-
-          {/* ── Schemes Feeds ── */}
+          {/* Feed Content */}
           <div className="space-y-4">
+            <h2 className="text-lg font-bold font-display text-white">
+              {activeTab === 'eligible' ? 'Your Top Matches' : `Search Results for "${searchQuery}"`}
+            </h2>
+
             {loading && activeTab === 'eligible' ? (
               <div className="flex flex-col items-center py-16 gap-3">
                 <div className="w-8 h-8 border-2 rounded-full animate-spin" style={{ borderColor: 'rgba(233,138,21,0.3)', borderTopColor: '#E98A15' }} />
-                <span className="text-xs text-indigo-300/60 uppercase font-semibold">{t('common.loading')}</span>
+                <span className="text-xs text-indigo-300/60 uppercase font-semibold">Loading Matches...</span>
               </div>
             ) : activeTab === 'eligible' ? (
               recommendations.length === 0 ? (
-                <div className="glass rounded-2xl p-10 text-center border border-white/5 space-y-4 animate-fade-up">
+                <div className="rounded-2xl p-10 text-center border border-white/5 bg-white/[0.01] space-y-4">
                   <div className="w-12 h-12 rounded-full bg-white/5 mx-auto flex items-center justify-center text-indigo-300">
                     <HelpCircle className="w-6 h-6" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-sm">{t('dashboard.noSchemes')}</h3>
-                    <p className="text-indigo-300/50 text-xs mt-1">{t('dashboard.noSchemesSubtext')}</p>
+                    <h3 className="font-bold text-sm">No Matches Found</h3>
+                    <p className="text-indigo-300/50 text-xs mt-1">Try filling more details in edit profile to get recommendations.</p>
                   </div>
-                  <Link to="/onboarding" className="btn-gold inline-flex w-auto px-6 py-2.5 text-xs">{t('dashboard.updateProfile')}</Link>
+                  <Link to="/profile" className="inline-block px-5 py-2 rounded-xl bg-amber-500 text-black font-semibold text-xs transition-colors hover:bg-amber-400">Update Profile</Link>
                 </div>
               ) : (
-                recommendations.map(scheme => renderSchemeCard(scheme))
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {recommendations.slice(0, 6).map((scheme, index) => renderMockupSchemeCard(scheme, index))}
+                </div>
               )
             ) : (
-              // Search tab
+              // Search Results
               searchQuery.trim() === '' ? (
-                <div className="glass rounded-2xl p-10 text-center border border-white/5 text-indigo-300/40 text-xs animate-fade-up">
-                  {t('dashboard.emptySearch')}
+                <div className="rounded-2xl p-10 text-center border border-white/5 bg-white/[0.01] text-indigo-300/40 text-xs">
+                  Type a query to search government schemes.
                 </div>
               ) : searchResults.length === 0 ? (
-                <div className="glass rounded-2xl p-10 text-center border border-white/5 text-indigo-300/40 text-xs animate-fade-up">
-                  {t('dashboard.noSearchResults')} "{searchQuery}"
+                <div className="rounded-2xl p-10 text-center border border-white/5 bg-white/[0.01] text-indigo-300/40 text-xs">
+                  No schemes found matching "{searchQuery}"
                 </div>
               ) : (
-                searchResults.map(scheme => renderSchemeCard(scheme))
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {searchResults.map((scheme, index) => renderMockupSchemeCard(scheme, index))}
+                </div>
               )
             )}
           </div>
-        </div>
 
-        {/* Right Side Column (Voice Assistant & History) */}
-        <div className="space-y-6">
-          
-          {/* Voice Assistant Module */}
-          <div className="glass-card rounded-3xl p-6 border border-white/10 flex flex-col items-center text-center space-y-4 relative overflow-hidden animate-fade-up">
-            {/* Pulsing ring indicator */}
-            <div className="absolute -top-12 -left-12 w-24 h-24 rounded-full bg-amber-500/5 filter blur-xl" />
-            
-            <div className="space-y-1.5">
-              <h2 className="text-sm font-bold font-display uppercase tracking-widest text-amber-400">{t('dashboard.voiceAssistant')}</h2>
-              <p className="text-indigo-200/50 text-xs leading-relaxed px-4">
-                {t('dashboard.voiceDesc')}
-              </p>
+          {/* Recently Viewed Section */}
+          <div className="space-y-4 pt-4">
+            <div className="flex justify-between items-center">
+              <h2 className="text-lg font-bold font-display text-white">Recently Viewed</h2>
+              <div className="flex gap-2">
+                <button className="w-8 h-8 rounded-full border border-white/5 hover:border-white/20 flex items-center justify-center text-indigo-300 hover:text-white transition-colors">
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <button className="w-8 h-8 rounded-full border border-white/5 hover:border-white/20 flex items-center justify-center text-indigo-300 hover:text-white transition-colors">
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
             </div>
-            
-            {/* The Floating mic toggle button */}
-            <VoiceAssistant 
-              activeLanguage={i18n.language} 
-              onCommand={handleVoiceCommand} 
-            />
 
-            <div className="pt-2 text-[10px] text-indigo-400/60 leading-normal border-t border-white/5 w-full space-y-1">
-              <p>{t('dashboard.voiceTry')} <strong>"Farmer"</strong> / <strong>"Student"</strong></p>
-              <p>{t('dashboard.voiceSupports')}</p>
-            </div>
-          </div>
-
-          {/* Recently Viewed Schemes */}
-          <div className="glass rounded-3xl p-6 border border-white/5 space-y-4 animate-fade-up">
-            <h2 className="text-xs font-bold font-display uppercase tracking-widest text-indigo-300 flex items-center gap-2">
-              <Eye className="w-4 h-4 text-indigo-400" /> {t('dashboard.recentlyViewed')}
-            </h2>
             {recentlyViewed.length === 0 ? (
-              <p className="text-indigo-300/40 text-xs">{t('dashboard.noRecentlyViewed')}</p>
+              <p className="text-indigo-300/40 text-xs">No recently viewed schemes yet.</p>
             ) : (
-              <div className="space-y-2.5">
-                {recentlyViewed.map((scheme, index) => {
-                  const matched = 
-                    recommendations.find(r => r.scheme_id === scheme.scheme_id) ||
-                    searchResults.find(r => r.scheme_id === scheme.scheme_id) ||
-                    schemeDetails[scheme.scheme_id];
-                  
-                  const displayName = matched ? matched.scheme_name : scheme.scheme_name;
-                  const displayCategory = matched ? matched.schemeCategory : scheme.schemeCategory;
-                  
-                  return (
-                    <div 
-                      key={index} 
-                      onClick={async () => {
-                        const targetTab = recommendations.some(r => r.scheme_id === scheme.scheme_id) ? 'eligible' : 'search';
-                        setActiveTab(targetTab);
-                        setExpandedSchemeId(scheme.scheme_id);
-                        
-                        if (!schemeDetails[scheme.scheme_id]) {
-                          try {
-                            const response = await axios.get(`${API_BASE_URL}/schemes/${scheme.scheme_id}`, {
-                              params: { lang: i18n.language }
-                            });
-                            setSchemeDetails(prev => ({ ...prev, [scheme.scheme_id]: response.data }));
-                          } catch (err) {
-                            console.error('Failed to load scheme details:', err);
-                          }
-                        }
-                      }}
-                      className="p-3 rounded-xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.05] cursor-pointer transition-all flex items-center justify-between"
-                    >
-                      <div className="truncate pr-4">
-                        <p className="text-xs font-semibold truncate text-indigo-100">{displayName}</p>
-                        <p className="text-[10px] text-indigo-400/60 mt-0.5">{displayCategory || t('onboarding.options.category.general')}</p>
-                      </div>
-                      <ArrowRight className="w-3.5 h-3.5 text-indigo-400/50 flex-shrink-0" />
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {recentlyViewed.map((scheme, index) => (
+                  <div
+                    key={index}
+                    onClick={async () => {
+                      setActiveTab('eligible');
+                      handleSchemeClick(scheme);
+                    }}
+                    className="p-4 rounded-xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.04] hover:border-white/10 cursor-pointer transition-all flex items-center justify-between"
+                  >
+                    <div className="truncate pr-4 space-y-0.5">
+                      <p className="text-xs font-semibold truncate text-indigo-100">{scheme.scheme_name}</p>
+                      <p className="text-[10px] text-indigo-400/60">{scheme.schemeCategory || 'General'}</p>
                     </div>
-                  );
-                })}
+                    <ArrowRight className="w-4 h-4 text-indigo-400/40" />
+                  </div>
+                ))}
               </div>
             )}
           </div>
-        </div>
-      </main>
+
+        </main>
     </div>
+    </div >
   );
 
-  // Helper renderer for individual Scheme Cards
-  function renderSchemeCard(scheme) {
+  // Redesigned scheme card matching the mockup design
+  function renderMockupSchemeCard(scheme, index) {
     const isExpanded = expandedSchemeId === scheme.scheme_id;
     const isSpeaking = speakingSchemeId === scheme.scheme_id;
+    const colors = getSchemeColors(index);
 
     return (
-      <div 
-        key={scheme.scheme_id} 
+      <div
+        key={scheme.scheme_id}
         onClick={() => handleSchemeClick(scheme)}
-        className="glass-card rounded-2xl p-5 border border-white/[0.08] hover:border-white/20 transition-all cursor-pointer space-y-3 relative group"
+        className="rounded-2xl p-6 flex flex-col justify-between transition-all duration-200 hover:-translate-y-1 cursor-pointer bg-white/[0.02] border border-white/5 hover:bg-white/[0.04] relative group h-full"
+        style={{ borderTop: `4px solid ${colors.text}` }}
       >
-        <div className="flex items-start justify-between gap-4">
-          <div className="space-y-1">
-            <span className="inline-block bg-amber-500/10 text-amber-400 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border border-amber-500/20">
-              {scheme.schemeCategory || t('onboarding.options.category.general')}
+        <div className="flex flex-col gap-4 flex-grow mb-5">
+          {/* Top Row: Icon + Badge */}
+          <div className="flex justify-between items-start">
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${colors.iconBg}`}>
+              <Bookmark className="w-5 h-5" style={{ color: colors.text }} />
+            </div>
+            <span className="bg-emerald-500/10 text-emerald-400 text-[10px] font-bold px-2.5 py-1 rounded-full border border-emerald-500/20 flex items-center gap-1">
+              You Qualify <CheckCircle className="w-3 h-3" />
             </span>
-            <h3 className="font-semibold text-sm leading-snug group-hover:text-amber-400 transition-colors pr-2 text-white">
+          </div>
+
+          {/* Scheme Title & Ministry */}
+          <div className="space-y-1">
+            <h3 className="font-bold text-white text-sm leading-snug group-hover:text-amber-400 transition-colors">
               {scheme.scheme_name}
             </h3>
+            <p className="text-xs text-indigo-300/40 line-clamp-1">
+              {scheme.schemeCategory || "Ministry of General Affairs"}
+            </p>
           </div>
-          
-          {/* TTS Listen Button */}
-          <button
-            onClick={(e) => handleSpeak(scheme, e)}
-            className={`w-8 h-8 rounded-full border flex items-center justify-center flex-shrink-0 transition-all ${
-              isSpeaking 
-                ? 'bg-amber-50 border-amber-500 text-white animate-pulse' 
-                : 'bg-white/5 border-white/10 hover:border-amber-500/50 text-indigo-300 hover:text-amber-400'
-            }`}
-            title={isSpeaking ? 'Stop speech' : 'Listen to scheme details'}
-          >
-            {isSpeaking ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-          </button>
+
+          {/* Benefit & TTS */}
+          <div className="flex justify-between items-center bg-[#070F1E] p-3 rounded-xl border border-white/5 mt-auto">
+            <div className="truncate pr-2">
+              <p className="text-[9px] text-indigo-300/40 uppercase tracking-wider">Benefit</p>
+              <p className="text-xs font-bold text-white mt-0.5 truncate">{scheme.benefits || 'Check Details'}</p>
+            </div>
+
+            <button
+              onClick={(e) => handleSpeak(scheme, e)}
+              className={`w-7 h-7 rounded-full border flex items-center justify-center flex-shrink-0 transition-all ${isSpeaking
+                  ? 'bg-amber-500 border-amber-500 text-white animate-pulse'
+                  : 'bg-white/5 border-white/10 hover:border-amber-500/50 text-indigo-300 hover:text-amber-400'
+                }`}
+            >
+              {isSpeaking ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
+            </button>
+          </div>
         </div>
 
-        {/* Benefits Preview */}
-        <p className="text-xs text-indigo-200/70 line-clamp-2 leading-relaxed">
-          {scheme.benefits || 'No details provided.'}
-        </p>
-
-        {/* Collapsible expanded details */}
+        {/* Collapsible details */}
         {isExpanded && (
-          <div className="pt-4 border-t border-white/5 space-y-4 text-xs text-indigo-200/80 animate-fade-in">
+          <div className="mb-4 pt-2 border-t border-white/5 space-y-4 text-xs text-indigo-200/80 animate-fade-in">
             {!schemeDetails[scheme.scheme_id] ? (
               <div className="flex items-center gap-2 py-4 justify-center text-indigo-300/60 font-semibold">
                 <div className="w-4 h-4 border-2 rounded-full animate-spin" style={{ borderColor: 'rgba(233,138,21,0.3)', borderTopColor: '#E98A15' }} />
-                <span>{t('common.loading', 'Loading details...')}</span>
+                <span>Loading details...</span>
               </div>
             ) : (
               <>
                 {schemeDetails[scheme.scheme_id].details && (
                   <div>
-                    <h4 className="font-bold text-white mb-1.5 uppercase tracking-wide text-[10px] text-amber-500">{t('dashboard.schemeDetails')}</h4>
+                    <h4 className="font-bold text-white mb-1 uppercase tracking-wide text-[9px] text-amber-500">Scheme Details</h4>
                     <p className="leading-relaxed bg-white/[0.01] p-3 rounded-xl border border-white/5">{schemeDetails[scheme.scheme_id].details}</p>
                   </div>
                 )}
-                
+
                 {schemeDetails[scheme.scheme_id].eligibility && (
                   <div>
-                    <h4 className="font-bold text-white mb-1.5 uppercase tracking-wide text-[10px] text-amber-500">{t('dashboard.eligibilityCriteria')}</h4>
+                    <h4 className="font-bold text-white mb-1 uppercase tracking-wide text-[9px] text-amber-500">Eligibility Criteria</h4>
                     <p className="leading-relaxed bg-white/[0.01] p-3 rounded-xl border border-white/5">{schemeDetails[scheme.scheme_id].eligibility}</p>
                   </div>
                 )}
 
                 {schemeDetails[scheme.scheme_id].documents && (
                   <div>
-                    <h4 className="font-bold text-white mb-1.5 uppercase tracking-wide text-[10px] text-amber-500">{t('dashboard.requiredDocuments')}</h4>
+                    <h4 className="font-bold text-white mb-1 uppercase tracking-wide text-[9px] text-amber-500">Required Documents</h4>
                     <p className="leading-relaxed bg-white/[0.01] p-3 rounded-xl border border-white/5">{schemeDetails[scheme.scheme_id].documents}</p>
-                  </div>
-                )}
-
-                {schemeDetails[scheme.scheme_id].application && (
-                  <div>
-                    <h4 className="font-bold text-white mb-1.5 uppercase tracking-wide text-[10px] text-amber-500">{t('dashboard.howToApply')}</h4>
-                    <p className="leading-relaxed bg-white/[0.01] p-3 rounded-xl border border-white/5">{schemeDetails[scheme.scheme_id].application}</p>
                   </div>
                 )}
               </>
@@ -488,12 +500,28 @@ export default function Dashboard() {
           </div>
         )}
 
-        <div className="flex items-center justify-between text-[10px] text-indigo-300/40 pt-1">
-          <span>{t('dashboard.schemeLevel')}: {scheme.level || 'Central / State'}</span>
-          <span className="font-semibold text-amber-400/70 group-hover:underline flex items-center gap-1">
-            {isExpanded ? t('dashboard.collapseDetails') : t('dashboard.expandDetails')} 
-            <ArrowRight className={`w-3 h-3 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
-          </span>
+        {/* Buttons Row */}
+        <div className="flex gap-2.5 mt-auto pt-2">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleSchemeClick(scheme);
+            }}
+            className="flex-1 py-2 rounded-lg border border-white/10 text-xs font-semibold text-indigo-200 hover:bg-white/5 transition-all text-center"
+          >
+            {isExpanded ? 'Less Info' : 'Learn More'}
+          </button>
+
+          <a
+            href={`https://www.myscheme.gov.in/schemes/${scheme.slug}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="flex-1 py-2 rounded-lg bg-white/[0.05] border border-white/10 hover:border-amber-500/30 text-xs font-semibold text-amber-400 hover:text-white transition-all text-center flex items-center justify-center gap-1.5"
+          >
+            Apply Online <ArrowRight className="w-3 h-3" />
+          </a>
         </div>
       </div>
     );
