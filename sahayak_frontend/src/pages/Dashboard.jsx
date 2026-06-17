@@ -185,7 +185,7 @@ export default function Dashboard() {
       <div className="orb animate-float2" style={{ width: '400px', height: '400px', background: 'radial-gradient(circle, rgba(62,92,138,0.15) 0%, transparent 70%)', bottom: '-50px', left: '-50px' }} />
 
       {/* ── Navigation Header ── */}
-      <header className="relative z-10 flex items-center justify-between px-6 py-5 sm:px-10 lg:px-16 border-b border-white/5 bg-white/[0.02] backdrop-blur-md">
+      <header className="relative z-50 flex items-center justify-between px-6 py-5 sm:px-10 lg:px-16 border-b border-white/5 bg-white/[0.02] backdrop-blur-md">
         <Link to="/" className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg, #E98A15, #F0A23E)' }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
@@ -207,7 +207,7 @@ export default function Dashboard() {
       </header>
 
       {/* ── Dashboard Grid ── */}
-      <main className="relative z-10 flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <main className="relative z-0 flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
         
         {/* Left/Middle Column (Main Dashboard Content) */}
         <div className="lg:col-span-2 space-y-6">
