@@ -9,6 +9,7 @@ import {
 import { API_BASE_URL, useAuth } from '../contexts/AuthContext';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import ProfileMenu from '../components/ProfileMenu';
+import Sidebar from '../components/Sidebar';
 
 const FAQ = [
   {
@@ -75,59 +76,7 @@ export default function HelpSupport() {
         background: 'linear-gradient(145deg, #060E1C 0%, #0F1B30 30%, #1A2C50 65%, #243965 100%)',
       }}
     >
-      {/* ── Left Sidebar Navigation ── */}
-      <aside className="w-64 bg-[#070F1E] border-r border-white/5 flex flex-col justify-between p-6 h-screen sticky top-0 flex-shrink-0 z-40">
-        <div className="space-y-8">
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #E98A15, #F0A23E)' }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                <path d="M12 2L2 7l10 5 10-5-10-5z" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="rgba(255,255,255,0.2)" />
-                <path d="M2 17l10 5 10-5M2 12l10 5 10-5" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
-            <span className="font-display text-lg font-bold tracking-tight text-white">Sahayak</span>
-          </Link>
-
-          {/* Navigation Links */}
-          <nav className="flex flex-col gap-1.5">
-            {[
-              { label: 'Dashboard', icon: LayoutDashboard, path: '/' },
-              { label: 'My Schemes', icon: ClipboardCheck, path: '/documents' },
-              { label: 'Explore', icon: Compass, path: '/' },
-              { label: 'Profile', icon: User, path: '/profile' },
-              { label: 'Settings', icon: Settings, path: '/profile' },
-              { label: 'Help', icon: HelpCircle, path: '/help' }
-            ].map((item) => {
-              const isActive = item.label === 'Help';
-              return (
-                <button
-                  key={item.label}
-                  onClick={() => {
-                    if (item.path.startsWith('/')) {
-                      navigate(item.path);
-                    } else {
-                      navigate('/');
-                    }
-                  }}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
-                    isActive
-                      ? 'text-black'
-                      : 'text-indigo-300/60 hover:text-white hover:bg-white/[0.03]'
-                  }`}
-                  style={isActive ? { background: 'linear-gradient(135deg, #E98A15, #F0A23E)' } : {}}
-                >
-                  <item.icon className="w-5 h-5" />
-                  {item.label}
-                </button>
-              );
-            })}
-          </nav>
-        </div>
-        <div className="pt-4 border-t border-white/5 w-full text-center">
-          <span className="text-[10px] text-indigo-300/40">Sahayak Support Center v1.0</span>
-        </div>
-      </aside>
+      <Sidebar activePage="help" />
 
       {/* ── Main Content Area ── */}
       <div className="flex-1 flex flex-col overflow-y-auto h-screen relative">

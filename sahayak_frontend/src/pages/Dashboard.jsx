@@ -5,12 +5,13 @@ import axios from 'axios';
 import {
   User, MapPin, Briefcase, GraduationCap,
   Search, Volume2, VolumeX, Eye, ClipboardCheck, ArrowRight, HelpCircle,
-  LayoutDashboard, Compass, Settings, Bell, ChevronLeft, ChevronRight,
+  Bell, ChevronLeft, ChevronRight,
   Bookmark, CheckCircle
 } from 'lucide-react';
 import { useAuth, API_BASE_URL } from '../contexts/AuthContext';
 import LanguageSwitcher from '../components/LanguageSwitcher';
-import VoiceAssistant, { speakText, stopSpeaking } from '../components/VoiceAssistant';
+import Sidebar from '../components/Sidebar';
+import { speakText, stopSpeaking } from '../components/VoiceAssistant';
 import ProfileMenu from '../components/ProfileMenu';
 
 export default function Dashboard() {
@@ -28,6 +29,7 @@ export default function Dashboard() {
   const [speakingSchemeId, setSpeakingSchemeId] = useState(null);
   const [expandedSchemeId, setExpandedSchemeId] = useState(null);
   const [schemeDetails, setSchemeDetails] = useState({}); // stores full details by scheme_id
+  const [visitedCount, setVisitedCount] = useState(0);
 
   // Load recommended schemes
   const loadRecommendations = async () => {
@@ -82,6 +84,12 @@ export default function Dashboard() {
     if (saved) {
       setRecentlyViewed(JSON.parse(saved));
     }
+
+    // Load visited count from localStorage
+    const savedVisited = localStorage.getItem(`visited_schemes_${currentUser.id}`);
+    if (savedVisited) {
+      setVisitedCount(JSON.parse(savedVisited).length);
+    }
   }, [currentUser, i18n.language]);
 
   // Handle Speech Recognition query result
@@ -98,6 +106,18 @@ export default function Dashboard() {
     const updated = [scheme, ...recentlyViewed.filter(s => s.scheme_id !== scheme.scheme_id)].slice(0, 5);
     setRecentlyViewed(updated);
     localStorage.setItem(`recently_viewed_${currentUser?.id}`, JSON.stringify(updated));
+
+    // Visited tracking
+    let visitedList = [];
+    const savedVisited = localStorage.getItem(`visited_schemes_${currentUser?.id}`);
+    if (savedVisited) {
+      visitedList = JSON.parse(savedVisited);
+    }
+    if (!visitedList.includes(scheme.scheme_id)) {
+      visitedList.push(scheme.scheme_id);
+      localStorage.setItem(`visited_schemes_${currentUser?.id}`, JSON.stringify(visitedList));
+      setVisitedCount(visitedList.length);
+    }
 
     if (isExpanding && !schemeDetails[scheme.scheme_id]) {
       try {
@@ -190,71 +210,10 @@ export default function Dashboard() {
         background: 'linear-gradient(145deg, #060E1C 0%, #0F1B30 30%, #1A2C50 65%, #243965 100%)',
       }}
     >
-      {/* ── Left Sidebar Navigation ── */}
-      <aside className="w-64 bg-[#070F1E] border-r border-white/5 flex flex-col justify-between p-6 h-screen sticky top-0 flex-shrink-0 z-40">
-        <div className="space-y-8">
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #E98A15, #F0A23E)' }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                <path d="M12 2L2 7l10 5 10-5-10-5z" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="rgba(255,255,255,0.2)" />
-                <path d="M2 17l10 5 10-5M2 12l10 5 10-5" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </div>
-            <span className="font-display text-lg font-bold tracking-tight text-white">Sahayak</span>
-          </Link>
+      <Sidebar activePage="dashboard" onVoiceCommand={handleVoiceCommand} />
 
-          {/* Navigation Links */}
-          <nav className="flex flex-col gap-1.5">
-            {[
-              { label: 'Dashboard', icon: LayoutDashboard, path: '/' },
-              { label: 'My Schemes', icon: ClipboardCheck, path: '/documents' },
-              { label: 'Explore', icon: Compass, path: '#explore' },
-              { label: 'Profile', icon: User, path: '/profile' },
-              { label: 'Settings', icon: Settings, path: '/profile' },
-              { label: 'Help', icon: HelpCircle, path: '/help' }
-            ].map((item) => {
-              const isActive = (item.label === 'Dashboard' && activeTab === 'eligible') ||
-                (item.label === 'Explore' && activeTab === 'search');
-              return (
-                <button
-                  key={item.label}
-                  onClick={() => {
-                    if (item.path.startsWith('/')) {
-                      navigate(item.path);
-                    } else if (item.path === '#explore') {
-                      setActiveTab('search');
-                    } else {
-                      setActiveTab('eligible');
-                    }
-                  }}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${isActive
-                      ? 'text-black'
-                      : 'text-indigo-300/60 hover:text-white hover:bg-white/[0.03]'
-                    }`}
-                  style={isActive ? { background: 'linear-gradient(135deg, #E98A15, #F0A23E)' } : {}}
-                >
-                  <item.icon className="w-5 h-5" />
-                  {item.label}
-                </button>
-              );
-            })}
-          </nav>
-        </div>
-
-        {/* Voice Assistant integrated in Sidebar */}
-        <div className="pt-4 border-t border-white/5 w-full flex flex-col items-center text-center space-y-2.5">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-amber-500">Voice Assistant</span>
-          <VoiceAssistant
-            activeLanguage={i18n.language}
-            onCommand={handleVoiceCommand}
-          />
-          <span className="text-[9px] text-indigo-300/40">Speak "Farmer", "Student", etc.</span>
-        </div>
-      </aside>
-
-      {/* ── Dashboard Grid ── */}
-      <main className="relative z-10 flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+      {/* ── Dashboard Content Wrapper ── */}
+      <div className="relative z-10 flex-1 flex flex-col overflow-hidden">
 
         {/* ── Header ── */}
         <header className="sticky top-0 z-30 flex items-center justify-between px-8 py-5 border-b border-white/5 bg-[#060E1C]/85 backdrop-blur-md">
@@ -287,7 +246,7 @@ export default function Dashboard() {
         </header>
 
         {/* ── Main Dashboard Body ── */}
-        <main className="flex-1 max-w-5xl w-full mx-auto px-8 py-8 space-y-8">
+        <main className="flex-1 max-w-5xl w-full mx-auto px-8 py-8 space-y-8 overflow-y-auto">
 
           {/* Greeting Title */}
           <div className="space-y-1">
@@ -308,11 +267,11 @@ export default function Dashboard() {
               <span className="text-sm font-semibold text-amber-500/80">Eligible Schemes</span>
             </div>
 
-            {/* Applied Card */}
+            {/* Visited Card */}
             <div className="rounded-2xl p-6 flex flex-col justify-between h-32 transition-all hover:scale-[1.02]"
               style={{ background: 'linear-gradient(135deg, #0D2319 0%, #08150F 100%)', border: '1.5px solid rgba(37,211,102,0.2)' }}>
-              <span className="text-3xl font-extrabold text-emerald-500">3</span>
-              <span className="text-sm font-semibold text-emerald-500/80">Applied</span>
+              <span className="text-3xl font-extrabold text-emerald-500">{visitedCount}</span>
+              <span className="text-sm font-semibold text-emerald-500/80">Visited Schemes</span>
             </div>
 
             {/* Total Benefits Card */}
@@ -408,8 +367,8 @@ export default function Dashboard() {
           </div>
 
         </main>
+      </div>
     </div>
-    </div >
   );
 
   // Redesigned scheme card matching the mockup design
@@ -456,8 +415,8 @@ export default function Dashboard() {
             <button
               onClick={(e) => handleSpeak(scheme, e)}
               className={`w-7 h-7 rounded-full border flex items-center justify-center flex-shrink-0 transition-all ${isSpeaking
-                  ? 'bg-amber-500 border-amber-500 text-white animate-pulse'
-                  : 'bg-white/5 border-white/10 hover:border-amber-500/50 text-indigo-300 hover:text-amber-400'
+                ? 'bg-amber-500 border-amber-500 text-white animate-pulse'
+                : 'bg-white/5 border-white/10 hover:border-amber-500/50 text-indigo-300 hover:text-amber-400'
                 }`}
             >
               {isSpeaking ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}

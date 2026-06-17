@@ -3,11 +3,14 @@ import { useAuth } from '../contexts/AuthContext';
 import Home                from '../pages/Home';
 import SignIn              from '../pages/SignIn';
 import SignUp              from '../pages/SignUp';
-import Onboarding          from '../pages/Onboarding';
+import Onboarding          from '../pages/onboarding';
 import Dashboard           from '../pages/Dashboard';
 import DocumentVerification from '../pages/DocumentVerification';
 import EditProfile         from '../pages/EditProfile';
 import HelpSupport         from '../pages/HelpSupport';
+import MySchemes           from '../pages/MySchemes';
+import Explore             from '../pages/Explore';
+import Settings            from '../pages/Settings';
 
 export default function AppRoutes() {
   const { currentUser } = useAuth();
@@ -32,6 +35,15 @@ export default function AppRoutes() {
 
       {/* Document vault */}
       <Route path="/documents" element={<DocumentVerification />} />
+
+      {/* My Schemes (all schemes) */}
+      <Route path="/my-schemes" element={<MySchemes />} />
+
+      {/* Explore Schemes */}
+      <Route path="/explore" element={<Explore />} />
+
+      {/* Settings */}
+      <Route path="/settings" element={<Settings />} />
 
       {/* Catch-all */}
       <Route path="*" element={<Navigate to="/" replace />} />
