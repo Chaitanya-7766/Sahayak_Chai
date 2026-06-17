@@ -1,4 +1,7 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { API_BASE_URL } from '../contexts/AuthContext';
 
 const FAQ = [
   {
@@ -31,6 +34,30 @@ const CONTACT = [
 
 export default function HelpSupport() {
   const navigate = useNavigate();
+  const [chatInput, setChatInput] = useState('');
+  const [chatHistory, setChatHistory] = useState([]);
+  const [isChatLoading, setIsChatLoading] = useState(false);
+
+  const handleChatSubmit = async () => {
+    if (!chatInput.trim()) return;
+    
+    const userMessage = chatInput.trim();
+    setChatHistory(prev => [...prev, { role: 'user', content: userMessage }]);
+    setChatInput('');
+    setIsChatLoading(true);
+
+    try {
+      const response = await axios.post(`${API_BASE_URL}/chat`, {
+        question: userMessage
+      });
+      setChatHistory(prev => [...prev, { role: 'ai', content: response.data.answer }]);
+    } catch (err) {
+      console.error('Chat error:', err);
+      setChatHistory(prev => [...prev, { role: 'ai', content: 'Sorry, I encountered an error connecting to the AI server. Please try again later.' }]);
+    } finally {
+      setIsChatLoading(false);
+    }
+  };
 
   return (
     <div
@@ -68,26 +95,53 @@ export default function HelpSupport() {
 
       <main className="relative z-10 flex-1 max-w-2xl mx-auto w-full px-4 sm:px-6 py-8 space-y-7">
 
-        {/* Hero */}
+        {/* Hero Chat UI */}
         <div
           className="rounded-2xl p-6 text-center animate-fade-up"
           style={{ background: 'rgba(255,255,255,0.03)', border: '1.5px solid rgba(255,255,255,0.07)' }}
         >
           <p className="text-4xl mb-3">🤝</p>
           <h2 className="font-display text-xl font-bold text-white mb-1">How can we help you?</h2>
-          <p className="text-sm text-indigo-400 mb-4">Browse the FAQs or reach out directly to our team</p>
-          <div
-            className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl max-w-sm mx-auto"
-            style={{ background: 'rgba(255,255,255,0.05)', border: '1.5px solid rgba(255,255,255,0.1)' }}
-          >
-            <svg className="w-4 h-4 text-indigo-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-            </svg>
-            <input
-              type="text"
-              placeholder="Search help topics…"
-              className="bg-transparent text-sm text-white placeholder-indigo-500 outline-none flex-1"
-            />
+          <p className="text-sm text-indigo-400 mb-4">Chat with our AI Assistant to find answers instantly.</p>
+          
+          <div className="w-full max-w-xl mx-auto flex flex-col gap-3">
+             {/* Chat History */}
+             {chatHistory.length > 0 && (
+                <div className="flex flex-col gap-3 max-h-80 overflow-y-auto w-full text-left bg-white/5 rounded-xl p-4 border border-white/10" style={{ scrollbarWidth: 'thin' }}>
+                   {chatHistory.map((msg, i) => (
+                      <div key={i} className={`p-3.5 rounded-xl text-sm leading-relaxed ${msg.role === 'user' ? 'bg-indigo-500/20 text-indigo-100 self-end ml-12 border border-indigo-500/20' : 'bg-white/[0.08] text-white mr-12 border border-white/10'}`}>
+                         <span className={`font-bold text-[10px] uppercase tracking-widest opacity-60 block mb-1.5 ${msg.role === 'user' ? 'text-indigo-300' : 'text-amber-400'}`}>
+                           {msg.role === 'user' ? 'You' : 'Sahayak AI'}
+                         </span>
+                         {msg.content}
+                      </div>
+                   ))}
+                </div>
+             )}
+
+             {/* Input Box */}
+             <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl w-full transition-all focus-within:bg-white/[0.08] focus-within:border-amber-500/50"
+                  style={{ background: 'rgba(255,255,255,0.05)', border: '1.5px solid rgba(255,255,255,0.1)' }}>
+                <input
+                  type="text"
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && !isChatLoading && handleChatSubmit()}
+                  placeholder="Ask a question about government schemes..."
+                  className="bg-transparent text-sm text-white placeholder-indigo-400/60 outline-none flex-1"
+                />
+                <button 
+                  onClick={handleChatSubmit} 
+                  disabled={!chatInput.trim() || isChatLoading}
+                  className="text-amber-500 disabled:opacity-30 hover:text-amber-400 transition-colors"
+                >
+                  {isChatLoading ? (
+                     <svg className="w-5 h-5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10" strokeOpacity="0.25"/><path d="M22 12a10 10 0 00-10-10" strokeLinecap="round"/></svg>
+                  ) : (
+                     <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                  )}
+                </button>
+             </div>
           </div>
         </div>
 
