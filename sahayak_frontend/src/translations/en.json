@@ -254,5 +254,43 @@
     "suggested1": "What education schemes am I eligible for?",
     "suggested2": "How do I apply for farmer subsidies?",
     "suggested3": "What documents do I need for health schemes?"
+  },
+  "myschemes": {
+    "title": "My Schemes",
+    "subtitle": "Browse all available government schemes in our directory",
+    "searchPlaceholder": "Search all schemes...",
+    "available": "Available",
+    "loadMore": "Load More Schemes",
+    "categories": {
+      "all": "All Categories",
+      "agriculture": "Agriculture, Rural & Environment",
+      "education": "Education & Learning",
+      "health": "Health & Wellness",
+      "banking": "Banking, Financial Services & Insurance",
+      "welfare": "Social Welfare & Empowerment",
+      "women": "Women & Child",
+      "business": "Business & Entrepreneurship"
+    }
+  },
+  "explore": {
+    "title": "Explore Schemes",
+    "subtitle": "Discover government policies, awards, subsidies, and central grants",
+    "searchPlaceholder": "Search by keywords, tags...",
+    "welfareSchemes": "Welfare Schemes",
+    "statesCovered": "States & UTs",
+    "statesCoveredVal": "37 Covered",
+    "activeMinistries": "Active Ministries",
+    "activeMinistriesVal": "15+ Depts",
+    "monthlyVisitors": "Monthly Visitors",
+    "browseByDept": "Browse by Department",
+    "targetCitizen": "Target Citizen",
+    "allCitizens": "All Citizens",
+    "filteredResults": "Filtered Search Results",
+    "trendingSchemes": "Trending Government Schemes",
+    "allSchemes": "All Schemes",
+    "central": "Central",
+    "state": "State",
+    "noSchemesExplore": "No schemes matching explore filters",
+    "noSchemesExploreSub": "Try clearing some query inputs or filter tags."
   }
 }

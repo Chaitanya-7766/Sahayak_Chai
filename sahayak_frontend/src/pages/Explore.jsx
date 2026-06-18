@@ -105,12 +105,12 @@ const EXPLORE_CATEGORIES = [
 
 // Target Groups chips
 const TARGET_GROUPS = [
-  { label: 'All Citizens', value: '' },
-  { label: 'Farmers', value: 'Farmer' },
-  { label: 'Students', value: 'Student' },
-  { label: 'Entrepreneurs', value: 'Entrepreneur' },
-  { label: 'Unemployed', value: 'Unemployed' },
-  { label: 'Retired', value: 'Retired' }
+  { key: 'all', value: '' },
+  { key: 'farmer', value: 'Farmer' },
+  { key: 'student', value: 'Student' },
+  { key: 'entrepreneur', value: 'Entrepreneur' },
+  { key: 'unemployed', value: 'Unemployed' },
+  { key: 'retired', value: 'Retired' }
 ];
 
 export default function Explore() {
@@ -314,7 +314,7 @@ export default function Explore() {
                 setSearchQuery(e.target.value);
                 setSearchParams({ q: e.target.value });
               }}
-              placeholder="Search by keywords, tags..."
+              placeholder={t('explore.searchPlaceholder')}
               className="w-full bg-slate-100 border border-slate-300 rounded-xl py-2 pl-10 pr-4 text-sm outline-none transition-all focus:border-amber-500 focus:bg-white text-slate-900"
             />
             <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
@@ -337,19 +337,19 @@ export default function Explore() {
             </div>
             <div>
               <h1 className="text-3xl font-bold font-display tracking-tight text-slate-900 flex items-center gap-2">
-                Explore Schemes <Sparkles className="w-5 h-5 text-amber-500" />
+                {t('explore.title')} <Sparkles className="w-5 h-5 text-amber-500" />
               </h1>
-              <p className="text-sm text-slate-500 mt-1">Discover government policies, awards, subsidies, and central grants</p>
+              <p className="text-sm text-slate-500 mt-1">{t('explore.subtitle')}</p>
             </div>
           </div>
 
           {/* Interactive Statistics Grid */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { label: 'Welfare Schemes', value: '3,390+', icon: Award, color: 'text-amber-500', bg: 'bg-amber-500/5' },
-              { label: 'States & UTs', value: '37 Covered', icon: Globe, color: 'text-blue-500', bg: 'bg-blue-500/5' },
-              { label: 'Active Ministries', value: '15+ Depts', icon: Building2, color: 'text-purple-500', bg: 'bg-purple-500/5' },
-              { label: 'Monthly Visitors', value: '50,000+', icon: Users, color: 'text-emerald-500', bg: 'bg-emerald-500/5' }
+              { label: t('explore.welfareSchemes'), value: '3,390+', icon: Award, color: 'text-amber-500', bg: 'bg-amber-500/5' },
+              { label: t('explore.statesCovered'), value: t('explore.statesCoveredVal'), icon: Globe, color: 'text-blue-500', bg: 'bg-blue-500/5' },
+              { label: t('explore.activeMinistries'), value: t('explore.activeMinistriesVal'), icon: Building2, color: 'text-purple-500', bg: 'bg-purple-500/5' },
+              { label: t('explore.monthlyVisitors'), value: '50,000+', icon: Users, color: 'text-emerald-500', bg: 'bg-emerald-500/5' }
             ].map((stat, i) => (
               <div 
                 key={i} 
@@ -369,7 +369,7 @@ export default function Explore() {
           {/* Ministry / Category Widget Grid */}
           <div className="space-y-4">
             <h2 className="text-sm font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
-              <LayoutGrid className="w-4 h-4" /> Browse by Department
+              <LayoutGrid className="w-4 h-4" /> {t('explore.browseByDept')}
             </h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
               {EXPLORE_CATEGORIES.map(cat => {
@@ -387,7 +387,7 @@ export default function Explore() {
                     </div>
                     <span className="text-2xl">{cat.icon}</span>
                     <span className="text-xs font-bold leading-snug text-slate-800 transition-colors">
-                      {cat.label}
+                      {t(`myschemes.categories.${cat.id}`)}
                     </span>
                   </div>
                 );
@@ -399,12 +399,12 @@ export default function Explore() {
           <div className="space-y-4 pt-2">
             {/* Target groups */}
             <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 pb-4">
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mr-2">Target Citizen:</span>
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mr-2">{t('explore.targetCitizen')}</span>
               {TARGET_GROUPS.map(grp => {
                 const isActive = targetGroup === grp.value;
                 return (
                   <button
-                    key={grp.label}
+                    key={grp.key}
                     onClick={() => setTargetGroup(grp.value)}
                     className={`px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all ${
                       isActive 
@@ -412,7 +412,7 @@ export default function Explore() {
                         : 'border-slate-300 text-slate-600 hover:border-slate-400 bg-white shadow-sm'
                     }`}
                   >
-                    {grp.label}
+                    {grp.key === 'all' ? t('explore.allCitizens') : t(`onboarding.options.occupation.${grp.key}`)}
                   </button>
                 );
               })}
@@ -422,15 +422,15 @@ export default function Explore() {
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold font-display text-slate-900">
                 {selectedCategory || searchQuery || targetGroup || schemeLevel 
-                  ? 'Filtered Search Results' 
-                  : 'Trending Government Schemes'}
+                  ? t('explore.filteredResults') 
+                  : t('explore.trendingSchemes')}
               </h2>
 
               <div className="flex rounded-xl bg-slate-100 p-1 border border-slate-200">
                 {[
-                  { label: 'All Schemes', value: '' },
-                  { label: 'Central', value: 'Central' },
-                  { label: 'State', value: 'State' }
+                  { label: t('explore.allSchemes'), value: '' },
+                  { label: t('explore.central'), value: 'Central' },
+                  { label: t('explore.state'), value: 'State' }
                 ].map(level => {
                   const isActive = schemeLevel === level.value;
                   return (
@@ -453,12 +453,12 @@ export default function Explore() {
           {loading ? (
             <div className="flex flex-col items-center py-20 gap-3">
               <div className="w-8 h-8 border-2 rounded-full animate-spin" style={{ borderColor: 'rgba(233,138,21,0.3)', borderTopColor: '#E98A15' }} />
-              <span className="text-xs text-slate-500 uppercase font-semibold">Filtering Matches...</span>
+              <span className="text-xs text-slate-500 uppercase font-semibold">{t('dashboard.loadingMatches')}</span>
             </div>
           ) : schemes.length === 0 ? (
             <div className="rounded-2xl p-16 text-center border border-slate-200 bg-white">
-              <p className="text-sm font-semibold text-slate-500">No schemes matching explore filters</p>
-              <p className="text-xs text-slate-400 mt-1">Try clearing some query inputs or filter tags.</p>
+              <p className="text-sm font-semibold text-slate-500">{t('explore.noSchemesExplore')}</p>
+              <p className="text-xs text-slate-400 mt-1">{t('explore.noSchemesExploreSub')}</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -515,8 +515,8 @@ export default function Explore() {
 
                       <div className="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-200 mt-auto">
                         <div className="truncate pr-2">
-                          <p className="text-[9px] text-slate-500 uppercase tracking-wider">Benefit</p>
-                          <p className="text-xs font-bold text-slate-900 mt-0.5 truncate">{scheme.benefits || 'Check Details'}</p>
+                          <p className="text-[9px] text-slate-500 uppercase tracking-wider">{t('dashboard.benefitLabel')}</p>
+                          <p className="text-xs font-bold text-slate-900 mt-0.5 truncate">{scheme.benefits || t('dashboard.checkDetails')}</p>
                         </div>
                         
                         <button
@@ -538,27 +538,27 @@ export default function Explore() {
                         {!schemeDetails[scheme.scheme_id] ? (
                           <div className="flex items-center gap-2 py-4 justify-center text-slate-500 font-semibold">
                             <div className="w-4 h-4 border-2 rounded-full animate-spin" style={{ borderColor: 'rgba(233,138,21,0.3)', borderTopColor: '#E98A15' }} />
-                            <span>Loading details...</span>
+                            <span>{t('dashboard.loadingDetails')}</span>
                           </div>
                         ) : (
                           <>
                             {schemeDetails[scheme.scheme_id].details && (
                               <div>
-                                <h4 className="font-bold mb-1 uppercase tracking-wide text-[9px] text-amber-500">Scheme Details</h4>
+                                <h4 className="font-bold mb-1 uppercase tracking-wide text-[9px] text-amber-500">{t('dashboard.schemeDetails')}</h4>
                                 <p className="leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-200 text-slate-700">{schemeDetails[scheme.scheme_id].details}</p>
                               </div>
                             )}
                             
                             {schemeDetails[scheme.scheme_id].eligibility && (
                               <div>
-                                <h4 className="font-bold mb-1 uppercase tracking-wide text-[9px] text-amber-500">Eligibility Criteria</h4>
+                                <h4 className="font-bold mb-1 uppercase tracking-wide text-[9px] text-amber-500">{t('dashboard.eligibilityCriteria')}</h4>
                                 <p className="leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-200 text-slate-700">{schemeDetails[scheme.scheme_id].eligibility}</p>
                               </div>
                             )}
 
                             {schemeDetails[scheme.scheme_id].documents && (
                               <div>
-                                <h4 className="font-bold mb-1 uppercase tracking-wide text-[9px] text-amber-500">Required Documents</h4>
+                                <h4 className="font-bold mb-1 uppercase tracking-wide text-[9px] text-amber-500">{t('dashboard.requiredDocuments')}</h4>
                                 <p className="leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-200 text-slate-700">{schemeDetails[scheme.scheme_id].documents}</p>
                               </div>
                             )}
@@ -577,7 +577,7 @@ export default function Explore() {
                         }}
                         className="flex-1 py-2 rounded-lg border border-slate-300 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-all text-center"
                       >
-                        {isExpanded ? 'Less Info' : 'Learn More'}
+                        {isExpanded ? t('dashboard.collapseDetails') : t('dashboard.expandDetails')}
                       </button>
                       
                       <a
@@ -587,7 +587,7 @@ export default function Explore() {
                         onClick={(e) => e.stopPropagation()}
                         className="flex-1 py-2 rounded-lg bg-amber-50 border border-amber-200 hover:border-amber-300 text-xs font-semibold text-amber-600 hover:text-amber-700 transition-all text-center flex items-center justify-center gap-1.5"
                       >
-                        Apply Online <ArrowRight className="w-3 h-3" />
+                        {t('dashboard.applyOnline')} <ArrowRight className="w-3 h-3" />
                       </a>
                     </div>
                   </div>
