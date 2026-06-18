@@ -78,12 +78,12 @@ export default function Sidebar({ activePage, onVoiceCommand }) {
 
       {/* Voice Assistant integrated in Sidebar */}
       <div className="pt-4 border-t border-slate-200 w-full flex flex-col items-center text-center space-y-2.5">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-amber-500">Voice Assistant</span>
+        <span className="text-[10px] font-bold uppercase tracking-wider text-amber-500">{t('dashboard.voiceAssistantBrief')}</span>
         <VoiceAssistant 
           activeLanguage={i18n.language} 
           onCommand={handleVoiceCommand} 
         />
-        <span className="text-[9px] text-slate-400">Speak "Farmer", "Student", etc.</span>
+        <span className="text-[9px] text-slate-400">{t('dashboard.voiceSpeakFarmer')}</span>
       </div>
     </aside>
   );
