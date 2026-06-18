@@ -119,6 +119,7 @@ export default function Explore() {
           page: 1,
           limit: 30,
           category: selectedCategory || undefined,
+          level: schemeLevel || undefined,
           q: searchQuery || undefined,
           lang: i18n.language
         }
@@ -126,7 +127,7 @@ export default function Explore() {
       
       let filtered = response.data;
       
-      // Client-side additional target-group and level filter matching
+      // Client-side additional target-group filter matching
       if (targetGroup) {
         const tgt = targetGroup.toLowerCase();
         filtered = filtered.filter(s => {
@@ -136,11 +137,6 @@ export default function Explore() {
           const eligibility = (s.eligibility || '').toLowerCase();
           return tags.includes(tgt) || name.includes(tgt) || details.includes(tgt) || eligibility.includes(tgt);
         });
-      }
-      
-      if (schemeLevel) {
-        const lvl = schemeLevel.toLowerCase();
-        filtered = filtered.filter(s => (s.level || '').toLowerCase() === lvl);
       }
 
       setSchemes(filtered);

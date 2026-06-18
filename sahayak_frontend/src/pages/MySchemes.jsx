@@ -47,7 +47,7 @@ export default function MySchemes() {
     else setLoadingMore(true);
 
     try {
-      const response = await axios.get(`${API_BASE_URL}/schemes/all`, {
+      const response = await axios.get(`${API_BASE_URL}/schemes/recommendations`, {
         params: {
           page: pageNum,
           limit: 20,

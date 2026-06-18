@@ -39,10 +39,10 @@ export default function Sidebar({ activePage, onVoiceCommand }) {
         <Link to="/" className="flex items-center gap-3">
           {!logoError ? (
             <img 
-              src="/logo.png" 
+              src="/emblem.svg" 
               alt="Logo" 
               onError={() => setLogoError(true)} 
-              className="w-8 h-8 rounded-lg object-contain"
+              className="w-8 h-8 rounded-lg object-contain bg-white/10 p-0.5"
             />
           ) : (
             <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #E98A15, #F0A23E)' }}>

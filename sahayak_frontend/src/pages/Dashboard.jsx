@@ -31,6 +31,12 @@ export default function Dashboard() {
   const [schemeDetails, setSchemeDetails] = useState({}); // stores full details by scheme_id
   const [visitedCount, setVisitedCount] = useState(0);
 
+  // Pagination states
+  const [recPage, setRecPage] = useState(0);
+  const [recentPage, setRecentPage] = useState(0);
+  const REC_ITEMS_PER_PAGE = 6;
+  const RECENT_ITEMS_PER_PAGE = 3;
+
   // Load recommended schemes
   const loadRecommendations = async () => {
     setLoading(true);
@@ -103,7 +109,7 @@ export default function Dashboard() {
     const isExpanding = expandedSchemeId !== scheme.scheme_id;
     setExpandedSchemeId(isExpanding ? scheme.scheme_id : null);
 
-    const updated = [scheme, ...recentlyViewed.filter(s => s.scheme_id !== scheme.scheme_id)].slice(0, 5);
+    const updated = [scheme, ...recentlyViewed.filter(s => s.scheme_id !== scheme.scheme_id)].slice(0, 15);
     setRecentlyViewed(updated);
     localStorage.setItem(`recently_viewed_${currentUser?.id}`, JSON.stringify(updated));
 
@@ -261,16 +267,26 @@ export default function Dashboard() {
           {/* Statistics Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Eligible Schemes Card */}
-            <div className="rounded-2xl p-6 flex flex-col justify-between h-32 transition-all hover:scale-[1.02]"
+            <div 
+              onClick={() => navigate('/my-schemes')}
+              className="rounded-2xl p-6 flex flex-col justify-between h-32 transition-all hover:scale-[1.02] cursor-pointer hover:border-amber-500/40 relative group"
               style={{ background: 'linear-gradient(135deg, #231B0D 0%, #151008 100%)', border: '1.5px solid rgba(233,138,21,0.2)' }}>
-              <span className="text-3xl font-extrabold text-amber-500">{recommendations.length}</span>
-              <span className="text-sm font-semibold text-amber-500/80">Eligible Schemes</span>
+              <div className="flex justify-between items-start">
+                <span className="text-3xl font-extrabold text-amber-500">{recommendations.length}</span>
+                <ChevronRight className="w-5 h-5 text-amber-500/40 group-hover:text-amber-500 transition-colors" />
+              </div>
+              <span className="text-sm font-semibold text-amber-500/80 flex items-center gap-1">Eligible Schemes</span>
             </div>
 
             {/* Visited Card */}
-            <div className="rounded-2xl p-6 flex flex-col justify-between h-32 transition-all hover:scale-[1.02]"
+            <div 
+              onClick={() => navigate('/my-schemes')}
+              className="rounded-2xl p-6 flex flex-col justify-between h-32 transition-all hover:scale-[1.02] cursor-pointer hover:border-emerald-500/40 relative group"
               style={{ background: 'linear-gradient(135deg, #0D2319 0%, #08150F 100%)', border: '1.5px solid rgba(37,211,102,0.2)' }}>
-              <span className="text-3xl font-extrabold text-emerald-500">{visitedCount}</span>
+              <div className="flex justify-between items-start">
+                <span className="text-3xl font-extrabold text-emerald-500">{visitedCount}</span>
+                <ChevronRight className="w-5 h-5 text-emerald-500/40 group-hover:text-emerald-500 transition-colors" />
+              </div>
               <span className="text-sm font-semibold text-emerald-500/80">Visited Schemes</span>
             </div>
 
@@ -284,9 +300,45 @@ export default function Dashboard() {
 
           {/* Feed Content */}
           <div className="space-y-4">
-            <h2 className="text-lg font-bold font-display text-white">
-              {activeTab === 'eligible' ? 'Your Top Matches' : `Search Results for "${searchQuery}"`}
-            </h2>
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <h2 className="text-lg font-bold font-display text-white">
+                  {activeTab === 'eligible' ? 'Your Top Matches' : `Search Results for "${searchQuery}"`}
+                </h2>
+                {activeTab === 'eligible' && (
+                  <Link 
+                    to="/my-schemes" 
+                    className="text-xs font-semibold text-amber-500 hover:text-amber-400 flex items-center gap-0.5 hover:underline"
+                  >
+                    View All <ArrowRight className="w-3 h-3" />
+                  </Link>
+                )}
+              </div>
+              {/* Pagination for Feed */}
+              {((activeTab === 'eligible' && recommendations.length > REC_ITEMS_PER_PAGE) || 
+                (activeTab === 'search' && searchResults.length > REC_ITEMS_PER_PAGE)) && (
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => setRecPage(p => Math.max(0, p - 1))}
+                    disabled={recPage === 0}
+                    className="w-8 h-8 rounded-full border border-white/5 hover:border-white/20 flex items-center justify-center text-indigo-300 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <button 
+                    onClick={() => setRecPage(p => p + 1)}
+                    disabled={
+                      activeTab === 'eligible' 
+                        ? (recPage + 1) * REC_ITEMS_PER_PAGE >= recommendations.length 
+                        : (recPage + 1) * REC_ITEMS_PER_PAGE >= searchResults.length
+                    }
+                    className="w-8 h-8 rounded-full border border-white/5 hover:border-white/20 flex items-center justify-center text-indigo-300 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+            </div>
 
             {loading && activeTab === 'eligible' ? (
               <div className="flex flex-col items-center py-16 gap-3">
@@ -307,7 +359,7 @@ export default function Dashboard() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {recommendations.slice(0, 6).map((scheme, index) => renderMockupSchemeCard(scheme, index))}
+                  {recommendations.slice(recPage * REC_ITEMS_PER_PAGE, (recPage + 1) * REC_ITEMS_PER_PAGE).map((scheme, index) => renderMockupSchemeCard(scheme, index))}
                 </div>
               )
             ) : (
@@ -322,7 +374,7 @@ export default function Dashboard() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {searchResults.map((scheme, index) => renderMockupSchemeCard(scheme, index))}
+                  {searchResults.slice(recPage * REC_ITEMS_PER_PAGE, (recPage + 1) * REC_ITEMS_PER_PAGE).map((scheme, index) => renderMockupSchemeCard(scheme, index))}
                 </div>
               )
             )}
@@ -332,21 +384,31 @@ export default function Dashboard() {
           <div className="space-y-4 pt-4">
             <div className="flex justify-between items-center">
               <h2 className="text-lg font-bold font-display text-white">Recently Viewed</h2>
-              <div className="flex gap-2">
-                <button className="w-8 h-8 rounded-full border border-white/5 hover:border-white/20 flex items-center justify-center text-indigo-300 hover:text-white transition-colors">
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <button className="w-8 h-8 rounded-full border border-white/5 hover:border-white/20 flex items-center justify-center text-indigo-300 hover:text-white transition-colors">
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
+              {recentlyViewed.length > RECENT_ITEMS_PER_PAGE && (
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => setRecentPage(p => Math.max(0, p - 1))}
+                    disabled={recentPage === 0}
+                    className="w-8 h-8 rounded-full border border-white/5 hover:border-white/20 flex items-center justify-center text-indigo-300 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <button 
+                    onClick={() => setRecentPage(p => p + 1)}
+                    disabled={(recentPage + 1) * RECENT_ITEMS_PER_PAGE >= recentlyViewed.length}
+                    className="w-8 h-8 rounded-full border border-white/5 hover:border-white/20 flex items-center justify-center text-indigo-300 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
             </div>
 
             {recentlyViewed.length === 0 ? (
               <p className="text-indigo-300/40 text-xs">No recently viewed schemes yet.</p>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {recentlyViewed.map((scheme, index) => (
+                {recentlyViewed.slice(recentPage * RECENT_ITEMS_PER_PAGE, (recentPage + 1) * RECENT_ITEMS_PER_PAGE).map((scheme, index) => (
                   <div
                     key={index}
                     onClick={async () => {

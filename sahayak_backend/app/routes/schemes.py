@@ -12,19 +12,43 @@ router = APIRouter(prefix="/schemes", tags=["Schemes"])
 def get_recommendations(
     background_tasks: BackgroundTasks,
     lang: str = Query("en"),
+    page: int = Query(1, ge=1),
+    limit: int = Query(20, ge=1, le=100),
+    category: str = Query(None),
+    q: str = Query(None),
     current_user: User = Depends(get_current_user)
 ):
     """
     Evaluates the current user's profile and returns a list of schemes 
-    they are eligible for, filtered using the matching logic.
+    they are eligible for, filtered using the matching logic, with pagination and search.
     """
     if not current_user.state or current_user.age is None:
         return []
         
     schemes = get_recommended_schemes(current_user)
     
+    # Filter by category if provided
+    if category:
+        schemes = [s for s in schemes if category.lower() in str(s.get("schemeCategory", "")).lower()]
+        
+    # Filter by search query if provided
+    if q:
+        q_lower = q.lower()
+        schemes = [s for s in schemes if 
+            q_lower in str(s.get("scheme_name", "")).lower() or
+            q_lower in str(s.get("details", "")).lower() or
+            q_lower in str(s.get("benefits", "")).lower() or
+            q_lower in str(s.get("schemeCategory", "")).lower() or
+            q_lower in str(s.get("tags", "")).lower()
+        ]
+        
+    # Paginate
+    start_idx = (page - 1) * limit
+    end_idx = start_idx + limit
+    matched_schemes = schemes[start_idx:end_idx]
+    
     results = []
-    for i, s in enumerate(schemes):
+    for i, s in enumerate(matched_schemes):
         if i < 3:
             results.append(translate_scheme_hybrid(s, lang, lite=True, force_sync=True))
         else:
@@ -59,6 +83,7 @@ def get_all_schemes(
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=100),
     category: str = Query(None),
+    level: str = Query(None),
     q: str = Query(None),
     lang: str = Query("en")
 ):
@@ -73,7 +98,11 @@ def get_all_schemes(
 
     # Filter by category if provided
     if category:
-        df = df[df["schemeCategory"].str.lower() == category.lower()]
+        df = df[df["schemeCategory"].str.lower().str.contains(category.lower(), na=False)]
+
+    # Filter by level if provided
+    if level:
+        df = df[df["level"].str.lower() == level.lower()]
 
     # Filter by search query if provided
     if q:

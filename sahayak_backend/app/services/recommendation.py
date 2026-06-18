@@ -90,22 +90,21 @@ def get_recommended_schemes(user: User) -> list[dict]:
         
         # 2. Gender check
         row_gender = clean_val(row.get("gender"))
-        if row_gender and u_gender:
-            # e.g., row_gender = 'female', u_gender = 'female'
-            if row_gender.lower() != u_gender:
+        if row_gender:
+            if not u_gender or row_gender.lower() != u_gender:
                 continue
                 
         # 3. State check
         row_state = clean_val(row.get("state"))
-        if row_state and u_state:
-            # if state in CSV is not "all india" or empty, it must match user's state
-            if row_state.lower() != u_state:
+        if row_state:
+            if not u_state or row_state.lower() != u_state:
                 continue
                 
         # 4. Occupation check
         row_occupation = clean_val(row.get("occupation"))
-        if row_occupation and u_occupation:
-            # CSV may contain comma-separated occupations e.g. "student,worker"
+        if row_occupation:
+            if not u_occupation:
+                continue
             occupations = [o.strip().lower() for o in row_occupation.split(",")]
             if u_occupation not in occupations:
                 continue
@@ -118,17 +117,17 @@ def get_recommended_schemes(user: User) -> list[dict]:
                 
         # 6. Category check
         row_category = clean_val(row.get("category"))
-        if row_category and u_category:
-            # CSV may contain comma-separated categories e.g. "sc,st"
+        if row_category:
+            if not u_category:
+                continue
             categories = [c.strip().lower() for c in row_category.split(",")]
             if u_category not in categories:
                 continue
                 
         # 7. Education check
         row_edu = clean_val(row.get("education_level"))
-        if row_edu and u_education:
-            # simple match check
-            if row_edu.lower() != u_education:
+        if row_edu:
+            if not u_education or row_edu.lower() != u_education:
                 continue
                 
         # 8. Disability check
@@ -140,8 +139,8 @@ def get_recommended_schemes(user: User) -> list[dict]:
                 
         # 9. Marital Status check
         row_marital = clean_val(row.get("marital_status"))
-        if row_marital and u_marital:
-            if row_marital.lower() != u_marital:
+        if row_marital:
+            if not u_marital or row_marital.lower() != u_marital:
                 continue
                 
         # If all checks pass, user is eligible!
