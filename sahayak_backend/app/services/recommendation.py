@@ -66,6 +66,7 @@ def get_recommended_schemes(user: User) -> list[dict]:
         return []
     
     eligible_ids = []
+    scheme_states = {}
     
     # Extract user profile values
     u_age = user.age
@@ -127,7 +128,25 @@ def get_recommended_schemes(user: User) -> list[dict]:
         # 7. Education check
         row_edu = clean_val(row.get("education_level"))
         if row_edu:
-            if not u_education or row_edu.lower() != u_education:
+            if not u_education:
+                continue
+            r_edu = row_edu.lower()
+            u_edu = u_education.lower()
+            def is_edu_match(r, u):
+                if r == u:
+                    return True
+                if r == "any" or u == "any" or r == "all" or u == "all":
+                    return True
+                if "10th" in r and "10th" in u:
+                    return True
+                if "undergrad" in r or "ug" in r:
+                    if "undergrad" in u or "ug" in u:
+                        return True
+                if "postgrad" in r or "pg" in r:
+                    if "postgrad" in u or "pg" in u:
+                        return True
+                return False
+            if not is_edu_match(r_edu, u_edu):
                 continue
                 
         # 8. Disability check
@@ -144,7 +163,9 @@ def get_recommended_schemes(user: User) -> list[dict]:
                 continue
                 
         # If all checks pass, user is eligible!
-        eligible_ids.append(int(row["scheme_id"]))
+        sid = int(row["scheme_id"])
+        eligible_ids.append(sid)
+        scheme_states[sid] = clean_val(row.get("state"))
         
     # Join eligible scheme_ids with schemes details
     matched_schemes = schemes_df[schemes_df["scheme_id"].isin(eligible_ids)]
@@ -152,8 +173,14 @@ def get_recommended_schemes(user: User) -> list[dict]:
     # Format results as dictionary list
     results = []
     for _, row in matched_schemes.iterrows():
+        sid = int(row.get("scheme_id"))
+        s_state = scheme_states.get(sid)
+        is_state_priority = False
+        if s_state and u_state and s_state.lower() == u_state:
+            is_state_priority = True
+
         results.append({
-            "scheme_id": int(row.get("scheme_id")),
+            "scheme_id": sid,
             "scheme_name": str(row.get("scheme_name")),
             "slug": str(row.get("slug")) if not pd.isna(row.get("slug")) else None,
             "details": str(row.get("details")) if not pd.isna(row.get("details")) else None,
@@ -164,8 +191,11 @@ def get_recommended_schemes(user: User) -> list[dict]:
             "level": str(row.get("level")) if not pd.isna(row.get("level")) else None,
             "schemeCategory": str(row.get("schemeCategory")) if not pd.isna(row.get("schemeCategory")) else None,
             "tags": str(row.get("tags")) if not pd.isna(row.get("tags")) else None,
+            "is_state_priority": is_state_priority
         })
         
+    # Prioritize state-specific schemes matching user's state at the top
+    results.sort(key=lambda s: 0 if s["is_state_priority"] else 1)
     return results
 
 def search_all_schemes(query: str) -> list[dict]:

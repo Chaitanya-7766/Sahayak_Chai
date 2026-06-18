@@ -9,8 +9,13 @@ from app.routes.documents import router as documents_router
 from app.routes.chat import router as chat_router
 
 # Attempt to auto-create tables in Supabase on startup
+from sqlalchemy import text
 try:
     Base.metadata.create_all(bind=engine)
+    # Seamless migration for email_notifications column
+    with engine.connect() as conn:
+        conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS email_notifications BOOLEAN DEFAULT TRUE;"))
+        conn.commit()
     print("Database tables synchronized successfully.")
 except Exception as e:
     print(f"Startup Warning: Could not sync database tables (normal if .env connection credentials are placeholder): {e}")
