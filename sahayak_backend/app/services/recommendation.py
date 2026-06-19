@@ -160,13 +160,8 @@ def matches_state_name_exclusion(scheme_row, user_state: str) -> bool:
         str(scheme_row.get("tags", "")).lower()
     ])
     
-    def has_word(text, word):
-        # Match word with word boundaries
-        pattern = r'(?:\b|_)' + re.escape(word) + r'(?:\b|_)'
-        return bool(re.search(pattern, text))
-
     for state in all_states:
-        if has_word(scheme_text, state):
+        if state in scheme_text:
             is_match = (state == u_state)
             if not is_match and u_state in state_aliases:
                 for alias in state_aliases[u_state]:
@@ -174,10 +169,10 @@ def matches_state_name_exclusion(scheme_row, user_state: str) -> bool:
                         is_match = True
                         break
             if not is_match:
-                has_user_state = has_word(scheme_text, u_state)
+                has_user_state = (u_state in scheme_text)
                 if not has_user_state and u_state in state_aliases:
                     for alias in state_aliases[u_state]:
-                        if has_word(scheme_text, alias):
+                        if re.search(r'\b' + re.escape(alias) + r'\b', scheme_text):
                             has_user_state = True
                             break
                 if not has_user_state:
@@ -186,11 +181,11 @@ def matches_state_name_exclusion(scheme_row, user_state: str) -> bool:
     for state, aliases in state_aliases.items():
         if state != u_state:
             for alias in aliases:
-                if has_word(scheme_text, alias):
-                    has_user_state = has_word(scheme_text, u_state)
+                if re.search(r'\b' + re.escape(alias) + r'\b', scheme_text) or scheme_text.endswith(f" - {alias}") or scheme_text.startswith(f"{alias} "):
+                    has_user_state = (u_state in scheme_text)
                     if not has_user_state and u_state in state_aliases:
                         for u_alias in state_aliases[u_state]:
-                            if has_word(scheme_text, u_alias):
+                            if re.search(r'\b' + re.escape(u_alias) + r'\b', scheme_text):
                                 has_user_state = True
                                 break
                     if not has_user_state:
@@ -201,27 +196,25 @@ def matches_state_name_exclusion(scheme_row, user_state: str) -> bool:
 def get_dynamic_llm_recommendations(user: User) -> list[dict]:
     """
     Uses Groq Llama-3.3 to dynamically recommend official and realistic schemes
-    matching the user's specific profile, especially state flagship schemes for
-    Telangana and Andhra Pradesh.
+    matching the user's specific profile.
+
+    NOTE: recommendation results were previously served from a persistent cache.
+    That can make scheme updates appear “stuck” after profile changes.
+
+    To ensure profile changes are reflected reliably, we now bypass the
+    persistent user recommendation cache and always regenerate when called.
     """
     # Generate profile hash
     import hashlib
     u_income = float(user.annual_income) if user.annual_income is not None else None
     profile_str = f"{user.id}:{user.state}:{user.age}:{user.gender}:{user.occupation}:{u_income}:{user.category}:{user.education_level}:{bool(user.disability_status)}:{user.marital_status}"
     p_hash = hashlib.md5(profile_str.encode("utf-8")).hexdigest()
-    
+
     global user_rec_cache, dynamic_schemes_cache
+    # Always regenerate (avoid stale recommendations across profile updates)
+    # Cache is still written at the end for future calls.
     if p_hash in user_rec_cache:
-        cached_ids = user_rec_cache[p_hash]
-        cached_schemes = []
-        for sid in cached_ids:
-            if sid in dynamic_schemes_cache:
-                cached_schemes.append(dynamic_schemes_cache[sid])
-        if len(cached_schemes) == len(cached_ids) and len(cached_schemes) > 0:
-            print(f"Cache HIT: Using {len(cached_schemes)} cached dynamic recommendations for user {user.id}")
-            return cached_schemes
-        else:
-            print("Cache MISMATCH or missing scheme details in dynamic_schemes_cache. Regenerating dynamic recommendations...")
+        print(f"Cache BYPASSED: recomputing dynamic recommendations for user {user.id} (p_hash={p_hash})")
 
     api_key = settings.GROQ_API_KEY or os.getenv("GROQ_API_KEY")
     if not api_key:
@@ -310,32 +303,17 @@ def get_dynamic_llm_recommendations(user: User) -> list[dict]:
         schemes = result.get("schemes", []) if result else []
         formatted_schemes = []
         for i, s in enumerate(schemes):
-            scheme_name = str(s.get("scheme_name", ""))
-            if not scheme_name:
-                continue
-                
-            # Generate a stable unique name-based ID to prevent cache collisions
-            import hashlib
-            name_hash = hashlib.md5(scheme_name.lower().strip().encode("utf-8")).hexdigest()
-            scheme_id = int(name_hash[:7], 16) + 100000
-            
-            # Find actual slug from CSV if name matches
-            slug_val = str(s.get("slug", ""))
-            if schemes_df is not None and len(schemes_df) > 0:
-                matching_rows = schemes_df[schemes_df["scheme_name"].str.strip().str.lower() == scheme_name.strip().lower()]
-                if not matching_rows.empty:
-                    db_slug = matching_rows.iloc[0].get("slug")
-                    if pd.notna(db_slug) and db_slug:
-                        slug_val = str(db_slug)
+            name = str(s.get("scheme_name", ""))
+            stable_id = int(hashlib.md5(name.encode("utf-8")).hexdigest()[:7], 16) + 100000
                 
             docs = s.get("documents")
             if isinstance(docs, list):
                 docs = ", ".join(docs)
                 
             formatted_schemes.append({
-                "scheme_id": scheme_id,
-                "scheme_name": scheme_name,
-                "slug": slug_val,
+                "scheme_id": stable_id,
+                "scheme_name": name,
+                "slug": str(s.get("slug", "")),
                 "details": str(s.get("details", "")),
                 "benefits": str(s.get("benefits", "")),
                 "eligibility": str(s.get("eligibility", "")),
@@ -370,17 +348,8 @@ def get_recommended_schemes(user: User) -> list[dict]:
     global eligibility_df, schemes_df
     
     # 1. Fetch dynamic LLM recommendations (especially targeting realistic schemes)
-    dynamic_schemes_raw = get_dynamic_llm_recommendations(user)
-    u_state = str(user.state).strip().lower() if user.state else None
+    dynamic_schemes = get_dynamic_llm_recommendations(user)
     
-    # Filter dynamic schemes to ensure no out-of-state schemes are shown due to cache pollution or LLM errors
-    dynamic_schemes = []
-    for s in dynamic_schemes_raw:
-        if u_state and matches_state_name_exclusion(s, u_state):
-            print(f"Filtering out dynamic scheme {s['scheme_name']} due to state mismatch for user in {u_state}")
-            continue
-        dynamic_schemes.append(s)
-        
     # 2. Get static matches from CSV database
     csv_schemes = []
     if eligibility_df is not None and schemes_df is not None and len(eligibility_df) > 0:
@@ -575,6 +544,8 @@ def get_recommended_schemes(user: User) -> list[dict]:
     for s in dynamic_schemes:
         name = s["scheme_name"].strip().lower()
         if name not in seen_names:
+            if u_state and matches_state_name_exclusion(s, u_state):
+                continue
             seen_names.add(name)
             merged_results.append(s)
             

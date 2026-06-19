@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import axios from 'axios';
 import { 
-  Search, Bookmark, Volume2, VolumeX, ArrowRight, 
+  Search, Bookmark, Volume2, VolumeX, ArrowRight, ChevronDown,
   Sparkles, Award, Users, Globe, Building2, Eye, Compass, LayoutGrid
 } from 'lucide-react';
 import { useAuth, API_BASE_URL } from '../contexts/AuthContext';
@@ -128,7 +128,10 @@ export default function Explore() {
   const [targetGroup, setTargetGroup] = useState('');
   const [schemeLevel, setSchemeLevel] = useState(''); // 'Central' | 'State' | ''
   const [schemes, setSchemes] = useState([]);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [expandedSchemeId, setExpandedSchemeId] = useState(null);
   const [speakingSchemeId, setSpeakingSchemeId] = useState(null);
   const [schemeDetails, setSchemeDetails] = useState({});
@@ -174,14 +177,17 @@ export default function Explore() {
   };
 
   // Fetch explore search results
-  const fetchExploreSchemes = async () => {
-    setLoading(true);
+  const fetchExploreSchemes = async (pageNum, append = false) => {
+    if (pageNum === 1) {
+      setLoading(true);
+    } else {
+      setLoadingMore(true);
+    }
     try {
-      // Use backend '/all' with pagination limit of 30 for explore page
       const response = await axios.get(`${API_BASE_URL}/schemes/all`, {
         params: {
-          page: 1,
-          limit: 30,
+          page: pageNum,
+          limit: 20,
           category: selectedCategory || undefined,
           level: schemeLevel || undefined,
           q: searchQuery || undefined,
@@ -189,12 +195,12 @@ export default function Explore() {
         }
       });
       
-      let filtered = response.data;
+      let fetchedData = response.data;
       
       // Client-side additional target-group filter matching
       if (targetGroup) {
         const tgt = targetGroup.toLowerCase();
-        filtered = filtered.filter(s => {
+        fetchedData = fetchedData.filter(s => {
           const tags = (s.tags || '').toLowerCase();
           const name = (s.scheme_name || '').toLowerCase();
           const details = (s.details || '').toLowerCase();
@@ -203,11 +209,22 @@ export default function Explore() {
         });
       }
 
-      setSchemes(filtered);
+      if (response.data.length < 20) {
+        setHasMore(false);
+      } else {
+        setHasMore(true);
+      }
+
+      if (append) {
+        setSchemes(prev => [...prev, ...fetchedData]);
+      } else {
+        setSchemes(fetchedData);
+      }
     } catch (err) {
       console.error('Failed to load explore schemes:', err);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   };
 
@@ -222,12 +239,14 @@ export default function Explore() {
       navigate('/signin');
       return;
     }
-    fetchExploreSchemes();
+    setPage(1);
+    fetchExploreSchemes(1, false);
   }, [currentUser, searchQuery, selectedCategory, targetGroup, schemeLevel, i18n.language]);
 
-  // Voice Query Callback integration from Sidebar
-  const handleVoiceCommand = (text) => {
-    setSearchParams({ q: text });
+  const handleLoadMore = () => {
+    const nextPage = page + 1;
+    setPage(nextPage);
+    fetchExploreSchemes(nextPage, true);
   };
 
   // Tracking Clicked schemes (unique visited counter)
@@ -565,6 +584,28 @@ export default function Explore() {
               })}
             </div>
           )}
+
+          {hasMore && schemes.length > 0 && !loading && (
+            <div className="flex justify-center pt-4 pb-12">
+              <button
+                onClick={handleLoadMore}
+                disabled={loadingMore}
+                className="px-8 py-3 rounded-xl border border-slate-300 text-sm font-semibold hover:border-amber-500/50 hover:bg-slate-100 active:scale-95 transition-all disabled:opacity-50 flex items-center gap-2 bg-white text-slate-700 shadow-sm"
+              >
+                {loadingMore ? (
+                  <>
+                    <div className="w-4 h-4 border-2 rounded-full animate-spin" style={{ borderColor: 'rgba(15,23,42,0.2)', borderTopColor: '#0f172a' }} />
+                    {t('common.loading')}
+                  </>
+                ) : (
+                  <>
+                    {t('myschemes.loadMore')}
+                    <ChevronDown className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+            </div>
+          )}
         </main>
       </div>
     </div>
@@ -572,29 +613,27 @@ export default function Explore() {
 }
 
 // Helper function to extract URLs from text
-// Helper function to dynamically slugify text
-const slugify = (text) => {
-  if (!text) return '';
-  return text
-    .toString()
-    .toLowerCase()
-    .trim()
-    .replace(/\s+/g, '-')
-    .replace(/[^\w\-]+/g, '')
-    .replace(/\-\-+/g, '-')
-    .replace(/^-+/, '')
-    .replace(/-+$/, '');
+const extractUrl = (text) => {
+  if (!text) return null;
+  const match = text.match(/https?:\/\/[^\s,\"\')]+/);
+  return match ? match[0] : null;
 };
 
 // Helper function to dynamically construct the application link
 const getApplyUrl = (scheme) => {
   if (!scheme) return '#';
-  
-  const slug = scheme.slug || slugify(scheme.scheme_name);
-  if (slug && slug !== 'undefined' && slug !== 'null') {
-    return `https://www.myscheme.gov.in/schemes/${slug}`;
+
+  const isStatic = scheme.scheme_id < 100000;
+  if (isStatic && scheme.slug) {
+    return `https://www.myscheme.gov.in/schemes/${scheme.slug}`;
   }
-  
-  return `https://www.myscheme.gov.in/schemes/${slugify(scheme.scheme_name)}`;
+
+  const urlFromApp = extractUrl(scheme.application);
+  if (urlFromApp) return urlFromApp;
+
+  const urlFromDetails = extractUrl(scheme.details);
+  if (urlFromDetails) return urlFromDetails;
+
+  return `https://www.google.com/search?q=how+to+apply+online+for+${encodeURIComponent(scheme.scheme_name)}`;
 };
 
