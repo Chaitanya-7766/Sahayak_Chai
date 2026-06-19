@@ -414,30 +414,6 @@ export default function Explore() {
             </div>
           </div>
 
-          {/* Filtering row */}
-          <div className="space-y-4 pt-2">
-            {/* Target groups */}
-            <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 pb-4">
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mr-2">{t('explore.targetCitizen')}</span>
-              {TARGET_GROUPS.map(grp => {
-                const isActive = targetGroup === grp.value;
-                return (
-                  <button
-                    key={grp.key}
-                    onClick={() => setTargetGroup(grp.value)}
-                    className={`px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all ${
-                      isActive 
-                        ? 'bg-[#E98A15] text-white border-[#E98A15] font-bold' 
-                        : 'border-slate-300 text-slate-600 hover:border-slate-400 bg-white shadow-sm'
-                    }`}
-                  >
-                    {grp.key === 'all' ? t('explore.allCitizens') : t(`onboarding.options.occupation.${grp.key}`)}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
           {/* Schemes results feed */}
           {loading ? (
             <div className="flex flex-col items-center py-20 gap-3">
