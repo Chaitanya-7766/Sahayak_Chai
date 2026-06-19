@@ -460,28 +460,29 @@ export default function MySchemes() {
   );
 }
 
-// Helper function to extract URLs from text
-const extractUrl = (text) => {
-  if (!text) return null;
-  const match = text.match(/https?:\/\/[^\s,\"\')]+/);
-  return match ? match[0] : null;
+// Helper function to dynamically slugify text
+const slugify = (text) => {
+  if (!text) return '';
+  return text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/[^\w\-]+/g, '')
+    .replace(/\-\-+/g, '-')
+    .replace(/^-+/, '')
+    .replace(/-+$/, '');
 };
 
 // Helper function to dynamically construct the application link
 const getApplyUrl = (scheme) => {
   if (!scheme) return '#';
   
-  const isStatic = scheme.scheme_id < 100000;
-  if (isStatic && scheme.slug) {
-    return `https://www.myscheme.gov.in/schemes/${scheme.slug}`;
+  const slug = scheme.slug || slugify(scheme.scheme_name);
+  if (slug && slug !== 'undefined' && slug !== 'null') {
+    return `https://www.myscheme.gov.in/schemes/${slug}`;
   }
   
-  const urlFromApp = extractUrl(scheme.application);
-  if (urlFromApp) return urlFromApp;
-  
-  const urlFromDetails = extractUrl(scheme.details);
-  if (urlFromDetails) return urlFromDetails;
-  
-  return `https://www.google.com/search?q=how+to+apply+online+for+${encodeURIComponent(scheme.scheme_name)}`;
+  return `https://www.myscheme.gov.in/schemes/${slugify(scheme.scheme_name)}`;
 };
 

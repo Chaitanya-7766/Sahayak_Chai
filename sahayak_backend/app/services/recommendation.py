@@ -125,6 +125,7 @@ def matches_state_name_exclusion(scheme_row, user_state: str) -> bool:
     Returns True if the scheme's text mentions another state/UT but does not
     mention the user's state/UT, indicating a state mismatch.
     """
+    import re
     s_name = str(scheme_row.get("scheme_name", "")).lower()
     u_state = user_state.lower()
     
@@ -159,8 +160,13 @@ def matches_state_name_exclusion(scheme_row, user_state: str) -> bool:
         str(scheme_row.get("tags", "")).lower()
     ])
     
+    def has_word(text, word):
+        # Match word with word boundaries
+        pattern = r'(?:\b|_)' + re.escape(word) + r'(?:\b|_)'
+        return bool(re.search(pattern, text))
+
     for state in all_states:
-        if state in scheme_text:
+        if has_word(scheme_text, state):
             is_match = (state == u_state)
             if not is_match and u_state in state_aliases:
                 for alias in state_aliases[u_state]:
@@ -168,10 +174,10 @@ def matches_state_name_exclusion(scheme_row, user_state: str) -> bool:
                         is_match = True
                         break
             if not is_match:
-                has_user_state = (u_state in scheme_text)
+                has_user_state = has_word(scheme_text, u_state)
                 if not has_user_state and u_state in state_aliases:
                     for alias in state_aliases[u_state]:
-                        if f" {alias} " in f" {scheme_text} ":
+                        if has_word(scheme_text, alias):
                             has_user_state = True
                             break
                 if not has_user_state:
@@ -180,11 +186,11 @@ def matches_state_name_exclusion(scheme_row, user_state: str) -> bool:
     for state, aliases in state_aliases.items():
         if state != u_state:
             for alias in aliases:
-                if f" {alias} " in f" {scheme_text} " or scheme_text.endswith(f" - {alias}") or scheme_text.startswith(f"{alias} "):
-                    has_user_state = (u_state in scheme_text)
+                if has_word(scheme_text, alias):
+                    has_user_state = has_word(scheme_text, u_state)
                     if not has_user_state and u_state in state_aliases:
                         for u_alias in state_aliases[u_state]:
-                            if f" {u_alias} " in f" {scheme_text} ":
+                            if has_word(scheme_text, u_alias):
                                 has_user_state = True
                                 break
                     if not has_user_state:
@@ -304,9 +310,23 @@ def get_dynamic_llm_recommendations(user: User) -> list[dict]:
         schemes = result.get("schemes", []) if result else []
         formatted_schemes = []
         for i, s in enumerate(schemes):
-            scheme_id = s.get("scheme_id")
-            if not isinstance(scheme_id, int):
-                scheme_id = 100000 + i
+            scheme_name = str(s.get("scheme_name", ""))
+            if not scheme_name:
+                continue
+                
+            # Generate a stable unique name-based ID to prevent cache collisions
+            import hashlib
+            name_hash = hashlib.md5(scheme_name.lower().strip().encode("utf-8")).hexdigest()
+            scheme_id = int(name_hash[:7], 16) + 100000
+            
+            # Find actual slug from CSV if name matches
+            slug_val = str(s.get("slug", ""))
+            if schemes_df is not None and len(schemes_df) > 0:
+                matching_rows = schemes_df[schemes_df["scheme_name"].str.strip().str.lower() == scheme_name.strip().lower()]
+                if not matching_rows.empty:
+                    db_slug = matching_rows.iloc[0].get("slug")
+                    if pd.notna(db_slug) and db_slug:
+                        slug_val = str(db_slug)
                 
             docs = s.get("documents")
             if isinstance(docs, list):
@@ -314,8 +334,8 @@ def get_dynamic_llm_recommendations(user: User) -> list[dict]:
                 
             formatted_schemes.append({
                 "scheme_id": scheme_id,
-                "scheme_name": str(s.get("scheme_name", "")),
-                "slug": str(s.get("slug", "")),
+                "scheme_name": scheme_name,
+                "slug": slug_val,
                 "details": str(s.get("details", "")),
                 "benefits": str(s.get("benefits", "")),
                 "eligibility": str(s.get("eligibility", "")),
@@ -350,8 +370,17 @@ def get_recommended_schemes(user: User) -> list[dict]:
     global eligibility_df, schemes_df
     
     # 1. Fetch dynamic LLM recommendations (especially targeting realistic schemes)
-    dynamic_schemes = get_dynamic_llm_recommendations(user)
+    dynamic_schemes_raw = get_dynamic_llm_recommendations(user)
+    u_state = str(user.state).strip().lower() if user.state else None
     
+    # Filter dynamic schemes to ensure no out-of-state schemes are shown due to cache pollution or LLM errors
+    dynamic_schemes = []
+    for s in dynamic_schemes_raw:
+        if u_state and matches_state_name_exclusion(s, u_state):
+            print(f"Filtering out dynamic scheme {s['scheme_name']} due to state mismatch for user in {u_state}")
+            continue
+        dynamic_schemes.append(s)
+        
     # 2. Get static matches from CSV database
     csv_schemes = []
     if eligibility_df is not None and schemes_df is not None and len(eligibility_df) > 0:

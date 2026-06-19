@@ -300,7 +300,7 @@ export default function Explore() {
         background: 'linear-gradient(145deg, #f8fafc 0%, #e2e8f0 100%)',
       }}
     >
-      <Sidebar activePage="explore" onVoiceCommand={handleVoiceCommand} />
+      <Sidebar activePage="explore" />
 
       {/* Main Container */}
       <div className="flex-1 flex flex-col overflow-y-auto h-screen relative">
@@ -416,36 +416,6 @@ export default function Explore() {
                   </button>
                 );
               })}
-            </div>
-
-            {/* Scheme level */}
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold font-display text-slate-900">
-                {selectedCategory || searchQuery || targetGroup || schemeLevel 
-                  ? t('explore.filteredResults') 
-                  : t('explore.trendingSchemes')}
-              </h2>
-
-              <div className="flex rounded-xl bg-slate-100 p-1 border border-slate-200">
-                {[
-                  { label: t('explore.allSchemes'), value: '' },
-                  { label: t('explore.central'), value: 'Central' },
-                  { label: t('explore.state'), value: 'State' }
-                ].map(level => {
-                  const isActive = schemeLevel === level.value;
-                  return (
-                    <button
-                      key={level.label}
-                      onClick={() => setSchemeLevel(level.value)}
-                      className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase transition-all ${
-                        isActive ? 'bg-[#E98A15] text-white font-extrabold shadow-sm' : 'text-slate-600 hover:text-slate-900'
-                      }`}
-                    >
-                      {level.label}
-                    </button>
-                  );
-                })}
-              </div>
             </div>
           </div>
 
@@ -602,27 +572,29 @@ export default function Explore() {
 }
 
 // Helper function to extract URLs from text
-const extractUrl = (text) => {
-  if (!text) return null;
-  const match = text.match(/https?:\/\/[^\s,\"\')]+/);
-  return match ? match[0] : null;
+// Helper function to dynamically slugify text
+const slugify = (text) => {
+  if (!text) return '';
+  return text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/[^\w\-]+/g, '')
+    .replace(/\-\-+/g, '-')
+    .replace(/^-+/, '')
+    .replace(/-+$/, '');
 };
 
 // Helper function to dynamically construct the application link
 const getApplyUrl = (scheme) => {
   if (!scheme) return '#';
   
-  const isStatic = scheme.scheme_id < 100000;
-  if (isStatic && scheme.slug) {
-    return `https://www.myscheme.gov.in/schemes/${scheme.slug}`;
+  const slug = scheme.slug || slugify(scheme.scheme_name);
+  if (slug && slug !== 'undefined' && slug !== 'null') {
+    return `https://www.myscheme.gov.in/schemes/${slug}`;
   }
   
-  const urlFromApp = extractUrl(scheme.application);
-  if (urlFromApp) return urlFromApp;
-  
-  const urlFromDetails = extractUrl(scheme.details);
-  if (urlFromDetails) return urlFromDetails;
-  
-  return `https://www.google.com/search?q=how+to+apply+online+for+${encodeURIComponent(scheme.scheme_name)}`;
+  return `https://www.myscheme.gov.in/schemes/${slugify(scheme.scheme_name)}`;
 };
 
