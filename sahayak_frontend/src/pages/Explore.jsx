@@ -581,7 +581,7 @@ export default function Explore() {
                       </button>
                       
                       <a
-                        href={`https://www.myscheme.gov.in/schemes/${scheme.slug}`}
+                        href={getApplyUrl(scheme)}
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={(e) => e.stopPropagation()}
@@ -600,3 +600,29 @@ export default function Explore() {
     </div>
   );
 }
+
+// Helper function to extract URLs from text
+const extractUrl = (text) => {
+  if (!text) return null;
+  const match = text.match(/https?:\/\/[^\s,\"\')]+/);
+  return match ? match[0] : null;
+};
+
+// Helper function to dynamically construct the application link
+const getApplyUrl = (scheme) => {
+  if (!scheme) return '#';
+  
+  const isStatic = scheme.scheme_id < 100000;
+  if (isStatic && scheme.slug) {
+    return `https://www.myscheme.gov.in/schemes/${scheme.slug}`;
+  }
+  
+  const urlFromApp = extractUrl(scheme.application);
+  if (urlFromApp) return urlFromApp;
+  
+  const urlFromDetails = extractUrl(scheme.details);
+  if (urlFromDetails) return urlFromDetails;
+  
+  return `https://www.google.com/search?q=how+to+apply+online+for+${encodeURIComponent(scheme.scheme_name)}`;
+};
+

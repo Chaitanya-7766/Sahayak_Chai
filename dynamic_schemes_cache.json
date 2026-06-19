@@ -1,0 +1,93 @@
+{
+  "100001": {
+    "scheme_id": 100001,
+    "scheme_name": "Tamil Nadu Government Scholarship for Differently Abled Students",
+    "slug": "tamil-nadu-government-scholarship-for-differently-abled-students",
+    "details": "The scheme aims to provide financial assistance to differently abled students to pursue higher education in Tamil Nadu",
+    "benefits": "Up to Rs. 1000 per month for UG and PG students",
+    "eligibility": "Disability > 40%, OBC category, UG/PG students, Family income < 200000 per annum from all sources, Domicile of Tamil Nadu",
+    "application": "Apply online through the official website of the Tamil Nadu Government at https://www.tn.gov.in/, Fill the application form, Upload required documents, Submit the application",
+    "documents": "Disability certificate, Income certificate, Caste certificate, ID proof, Bank account details, Domicile certificate",
+    "level": "State",
+    "schemeCategory": "Social Welfare & Empowerment",
+    "tags": "Disability, Scholarship, OBC, UG, PG, Tamil Nadu"
+  },
+  "100002": {
+    "scheme_id": 100002,
+    "scheme_name": "Central Sector Scheme of Scholarship for OBC Students",
+    "slug": "central-sector-scheme-of-scholarship-for-obc-students",
+    "details": "The scheme aims to provide financial assistance to OBC students to pursue higher education",
+    "benefits": "Up to Rs. 1000 per month for UG and PG students",
+    "eligibility": "OBC category, UG/PG students, Family income < 1000000 per annum from all sources",
+    "application": "Apply online through National Scholarship Portal (NSP) at https://scholarships.gov.in/, Fill the application form, Upload required documents, Submit the application",
+    "documents": "Caste certificate, Income certificate, ID proof, Bank account details",
+    "level": "Central",
+    "schemeCategory": "Education & Learning",
+    "tags": "OBC, Scholarship, UG, PG"
+  },
+  "100003": {
+    "scheme_id": 100003,
+    "scheme_name": "Tamil Nadu Government Scholarship for OBC Students",
+    "slug": "tamil-nadu-government-scholarship-for-obc-students",
+    "details": "The scheme aims to provide financial assistance to OBC students to pursue higher education in Tamil Nadu",
+    "benefits": "Up to Rs. 500 per month for UG and PG students",
+    "eligibility": "OBC category, UG/PG students, Family income < 1000000 per annum from all sources, Domicile of Tamil Nadu",
+    "application": "Apply online through the official website of the Tamil Nadu Government at https://www.tn.gov.in/, Fill the application form, Upload required documents, Submit the application",
+    "documents": "Caste certificate, Income certificate, ID proof, Bank account details, Domicile certificate",
+    "level": "State",
+    "schemeCategory": "Education & Learning",
+    "tags": "OBC, Scholarship, UG, PG, Tamil Nadu"
+  },
+  "100004": {
+    "scheme_id": 100004,
+    "scheme_name": "Saksham Scholarship Scheme for Differently Abled Students",
+    "slug": "saksham-scholarship-scheme-for-differently-abled-students",
+    "details": "The scheme aims to provide financial assistance to differently abled students to pursue higher education",
+    "benefits": "Up to Rs. 20000 per annum for UG and PG students",
+    "eligibility": "Disability > 40%, UG/PG students, Family income < 300000 per annum from all sources",
+    "application": "Apply online through the official website of the scheme at https://www.aicte-india.org/, Fill the application form, Upload required documents, Submit the application",
+    "documents": "Disability certificate, Income certificate, ID proof, Bank account details",
+    "level": "Central",
+    "schemeCategory": "Social Welfare & Empowerment",
+    "tags": "Disability, Scholarship, UG, PG"
+  },
+  "100005": {
+    "scheme_id": 100005,
+    "scheme_name": "National Fund for Persons with Disabilities (NFPD) Scholarship",
+    "slug": "national-fund-for-persons-with-disabilities-nfpd-scholarship",
+    "details": "The scheme aims to provide financial assistance to persons with disabilities to pursue higher education",
+    "benefits": "Up to Rs. 1000 per month for UG and PG students",
+    "eligibility": "Disability > 40%, UG/PG students, Family income < 150000 per annum from all sources",
+    "application": "Apply online through the official website of the scheme at https://www.nfpd.nic.in/, Fill the application form, Upload required documents, Submit the application",
+    "documents": "Disability certificate, Income certificate, ID proof, Bank account details",
+    "level": "Central",
+    "schemeCategory": "Social Welfare & Empowerment",
+    "tags": "Disability, Scholarship, UG, PG"
+  },
+  "100006": {
+    "scheme_id": 100006,
+    "scheme_name": "Andhra Pradesh Government Merit Scholarship",
+    "slug": "andhra-pradesh-government-merit-scholarship",
+    "details": "Merit scholarship for students pursuing higher education in Andhra Pradesh",
+    "benefits": "Up to Rs. 10,000 per annum",
+    "eligibility": "General category students pursuing higher education in Andhra Pradesh",
+    "application": "https://epass.ap.gov.in/",
+    "documents": "Admission letter, Fee receipt, ID proof, Income certificate",
+    "level": "State",
+    "schemeCategory": "Education & Learning",
+    "tags": ""
+  },
+  "100000": {
+    "scheme_id": 100000,
+    "scheme_name": "National Scholarship for Persons with Disabilities",
+    "slug": "national-scholarship-for-persons-with-disabilities",
+    "details": "The scheme aims to provide financial assistance to students with disabilities to pursue higher education",
+    "benefits": "Up to Rs. 2000 per month for UG and PG students",
+    "eligibility": "Disability > 40%, OBC category, UG/PG students, Family income < 250000 per annum from all sources",
+    "application": "Apply online through National Scholarship Portal (NSP) at https://scholarships.gov.in/, Fill the application form, Upload required documents, Submit the application",
+    "documents": "Disability certificate, Income certificate, Caste certificate, ID proof, Bank account details",
+    "level": "Central",
+    "schemeCategory": "Social Welfare & Empowerment",
+    "tags": "Disability, Scholarship, OBC, UG, PG"
+  }
+}

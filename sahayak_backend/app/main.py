@@ -22,7 +22,7 @@ except Exception as e:
 
 app = FastAPI(
     title="Sahayak AI API",
-    description="Bridging Citizens and Government Services in India",
+    description="SAHAYAKAI - Bridging Citizens and Services in India",
     version="1.0.0"
 )
 
@@ -53,5 +53,5 @@ def read_root():
     return {
         "app": "Sahayak AI API",
         "status": "healthy",
-        "tagline": "Bridging Citizens and Government Services"
+        "tagline": "SAHAYAKAI - Bridging Citizens and Services"
     }
